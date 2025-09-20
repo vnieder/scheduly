@@ -307,7 +307,7 @@ def catalog_sections(p: SectionsPayload):
 async def startup_event():
     """Initialize session storage on startup."""
     try:
-        await session_manager.initialize_storage()
+        session_manager.initialize_storage()
         logger.info("Session storage initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize session storage: {e}")
