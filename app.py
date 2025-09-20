@@ -35,50 +35,9 @@ MAX_COURSES_PER_SEMESTER = int(os.getenv("MAX_COURSES_PER_SEMESTER", "6"))
 MAX_COURSE_SELECTION = int(os.getenv("MAX_COURSE_SELECTION", "10"))
 SESSION_TIMEOUT_HOURS = int(os.getenv("SESSION_TIMEOUT_HOURS", "24"))
 
-# File-based session store (simple but persistent)
-SESSION_FILE = "sessions.json"
-
-def load_sessions() -> Dict[str, Dict]:
-    """Load sessions from file."""
-    if os.path.exists(SESSION_FILE):
-        try:
-            with open(SESSION_FILE, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Failed to load sessions: {e}")
-    return {}
-
-def save_sessions(sessions: Dict[str, Dict]):
-    """Save sessions to file."""
-    try:
-        with open(SESSION_FILE, 'w') as f:
-            json.dump(sessions, f, indent=2)
-    except Exception as e:
-        logger.error(f"Failed to save sessions: {e}")
-
-def cleanup_expired_sessions(sessions: Dict[str, Dict]):
-    """Remove expired sessions."""
-    cutoff = datetime.now() - timedelta(hours=SESSION_TIMEOUT_HOURS)
-    expired = []
-    
-    for session_id, session_data in sessions.items():
-        created_at = session_data.get('created_at')
-        if created_at:
-            try:
-                created_time = datetime.fromisoformat(created_at)
-                if created_time < cutoff:
-                    expired.append(session_id)
-            except ValueError:
-                expired.append(session_id)
-    
-    for session_id in expired:
-        del sessions[session_id]
-        logger.info(f"Cleaned up expired session: {session_id}")
-    
-    return sessions
-
-# Load and initialize sessions
-SESSIONS = cleanup_expired_sessions(load_sessions())
+# Session storage using new backend system
+from services.session_manager import session_manager, get_session_storage
+from services.session_storage import SessionStorage, SessionNotFoundError as StorageSessionNotFoundError
 
 class BuildPayload(BaseModel):
     school: str = DEFAULT_SCHOOL
@@ -147,7 +106,7 @@ def health_check():
     return {"ok": True}
 
 @app.post("/build")
-def build_schedule_endpoint(p: BuildPayload):
+async def build_schedule_endpoint(p: BuildPayload):
     try:
         # Validate inputs
         if not validate_term(p.term):
@@ -209,9 +168,9 @@ def build_schedule_endpoint(p: BuildPayload):
         completed_courses = []
         plan = build_schedule(p.term, sections, preferences, requirements.prereqs, course_codes, requirements.multiSemesterPrereqs, completed_courses)
         
-        # Store session state with timestamp
-        SESSIONS[session_id] = {
-            "created_at": datetime.now().isoformat(),
+        # Store session state with new storage backend
+        storage = await get_session_storage()
+        session_data = {
             "school": p.school,
             "major": p.major,
             "term": p.term,
@@ -223,8 +182,8 @@ def build_schedule_endpoint(p: BuildPayload):
             "last_plan": plan.model_dump()
         }
         
-        # Save sessions to file
-        save_sessions(SESSIONS)
+        # Create session in storage backend
+        await storage.create_session(session_id, session_data)
         
         logger.info(f"Successfully created session {session_id} with {len(plan.sections)} sections")
         
@@ -241,13 +200,15 @@ def build_schedule_endpoint(p: BuildPayload):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.post("/optimize")
-def optimize_schedule(p: OptimizePayload):
+async def optimize_schedule(p: OptimizePayload):
     try:
-        # Validate session exists
-        if p.session_id not in SESSIONS:
+        # Validate session exists and get session data
+        storage = await get_session_storage()
+        session_data_obj = await storage.get_session(p.session_id)
+        if session_data_obj is None:
             raise SessionNotFoundError(p.session_id)
         
-        session = SESSIONS[p.session_id]
+        session_data = session_data_obj.data
         
         if not p.utterance or not p.utterance.strip():
             raise HTTPException(status_code=400, detail="Utterance cannot be empty for optimization")
@@ -262,7 +223,7 @@ def optimize_schedule(p: OptimizePayload):
             raise AIServiceError("Gemini", str(e))
         
         # Merge with existing preferences
-        existing_prefs = session["preferences"]
+        existing_prefs = session_data["preferences"]
         for key, value in new_prefs_data.items():
             if value is not None:
                 if key in ["noDays", "skipCourses", "pinSections"] and isinstance(value, list):
@@ -275,28 +236,28 @@ def optimize_schedule(p: OptimizePayload):
         
         # Re-fetch sections for the same courses
         try:
-            sections = get_sections(session["term"], session["courses"])
+            sections = get_sections(session_data["term"], session_data["courses"])
         except Exception as e:
             logger.error(f"Failed to get sections: {e}")
             raise CatalogServiceError(str(e))
         
         # Get prerequisites from session
-        prereqs_data = session.get("prereqs", [])
+        prereqs_data = session_data.get("prereqs", [])
         prereqs = [Prereq(**p) for p in prereqs_data] if prereqs_data else []
         
         # Build new schedule with updated preferences and prerequisites
-        available_courses = session.get("courses", [])
-        multi_semester_prereqs_data = session.get("multiSemesterPrereqs", [])
+        available_courses = session_data.get("courses", [])
+        multi_semester_prereqs_data = session_data.get("multiSemesterPrereqs", [])
         multi_semester_prereqs = [Prereq(**p) for p in multi_semester_prereqs_data] if multi_semester_prereqs_data else []
-        completed_courses = session.get("completedCourses", [])
-        plan = build_schedule(session["term"], sections, preferences, prereqs, available_courses, multi_semester_prereqs, completed_courses)
+        completed_courses = session_data.get("completedCourses", [])
+        plan = build_schedule(session_data["term"], sections, preferences, prereqs, available_courses, multi_semester_prereqs, completed_courses)
         
         # Update session state
-        session["preferences"] = preferences.model_dump()
-        session["last_plan"] = plan.model_dump()
+        session_data["preferences"] = preferences.model_dump()
+        session_data["last_plan"] = plan.model_dump()
         
-        # Save sessions to file
-        save_sessions(SESSIONS)
+        # Update session in storage backend
+        await storage.update_session(p.session_id, session_data)
         
         logger.info(f"Successfully optimized session {p.session_id}")
         
@@ -340,5 +301,25 @@ def catalog_sections(p: SectionsPayload):
     except Exception as e:
         logger.error(f"Unexpected error in /catalog/sections: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+# Startup and shutdown events
+@app.on_event("startup")
+async def startup_event():
+    """Initialize session storage on startup."""
+    try:
+        await session_manager.initialize_storage()
+        logger.info("Session storage initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize session storage: {e}")
+        raise
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up session storage on shutdown."""
+    try:
+        await session_manager.close()
+        logger.info("Session storage connections closed")
+    except Exception as e:
+        logger.error(f"Error closing session storage: {e}")
 
 # Removed multi-semester planning endpoint - out of scope for current frontend
