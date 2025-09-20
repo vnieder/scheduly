@@ -62,7 +62,7 @@ class SessionNotFoundError(HTTPException):
 
 class InvalidTermError(HTTPException):
     def __init__(self, term: str):
-        super().__init__(status_code=400, detail=f"Invalid term format: {term}. Expected format: YYYYMM")
+        super().__init__(status_code=400, detail=f"Invalid term format: {term}. Expected format: YYMM (e.g., 2251 for Fall 2025)")
 
 class InvalidSchoolError(HTTPException):
     def __init__(self, school: str):
@@ -77,13 +77,15 @@ class CatalogServiceError(HTTPException):
         super().__init__(status_code=503, detail=f"Course catalog service error: {error}")
 
 def validate_term(term: str) -> bool:
-    """Validate term format (YYYYMM)."""
-    if not term or len(term) != 6:
+    """Validate term format (YYMM)."""
+    if not term or len(term) != 4:
         return False
     try:
-        year = int(term[:4])
-        month = int(term[4:])
-        return 2020 <= year <= 2030 and 1 <= month <= 12
+        year = int(term[:2])
+        semester_code = int(term[2:])
+        # Allow terms like 2251 (Fall 2025), 2244 (Spring 2025), 2257 (Summer 2025)
+        # Semester codes: 44=Spring, 51=Fall, 57=Summer
+        return 20 <= year <= 30 and semester_code in [44, 51, 57]
     except ValueError:
         return False
 
@@ -151,6 +153,8 @@ async def build_schedule_endpoint(p: BuildPayload):
         # Get sections for these courses
         try:
             sections = get_sections(p.term, course_codes)
+            if not sections:
+                raise HTTPException(status_code=400, detail="No sections found for any of the required courses in the specified term")
         except Exception as e:
             logger.error(f"Failed to get sections: {e}")
             raise CatalogServiceError(str(e))
@@ -237,6 +241,8 @@ async def optimize_schedule(p: OptimizePayload):
         # Re-fetch sections for the same courses
         try:
             sections = get_sections(session_data["term"], session_data["courses"])
+            if not sections:
+                raise HTTPException(status_code=400, detail="No sections found for the courses in this session. The course offerings may have changed.")
         except Exception as e:
             logger.error(f"Failed to get sections: {e}")
             raise CatalogServiceError(str(e))

@@ -20,37 +20,9 @@ def test_semester_planning_direct():
         "utterance": "no Friday"
     }
     
-    response = requests.post(f"{BASE_URL}/plan-semesters", json=payload)
-    
-    if response.status_code == 200:
-        data = response.json()
-        print("✅ Semester planning endpoint working!")
-        print(f"Total semesters: {data['total_semesters']}")
-        
-        for semester in data['semester_plans']:
-            plan = semester['plan']
-            print(f"\n📚 {semester['semester']} (Term: {semester['term']})")
-            print(f"   Total Credits: {plan['totalCredits']}")
-            print(f"   Courses: {len(plan['sections'])}")
-            if plan['sections']:
-                for section in plan['sections'][:3]:  # Show first 3
-                    print(f"     • {section['course']} {section['section']} - {section['days']} {section['start']}-{section['end']}")
-                if len(plan['sections']) > 3:
-                    print(f"     ... and {len(plan['sections']) - 3} more courses")
-            else:
-                print("     No courses scheduled")
-            
-            if plan['explanations']:
-                print(f"   Notes: {'; '.join(plan['explanations'])}")
-        
-        return True
-    else:
-        print(f"❌ Error: {response.status_code}")
-        if "429" in str(response.status_code) or "RESOURCE_EXHAUSTED" in response.text:
-            print("⚠️  Rate limit exceeded. Please wait before trying again.")
-        else:
-            print(f"Response: {response.text}")
-        return False
+    # Multi-semester planning removed in MVP
+    print("❌ Multi-semester planning endpoint removed in MVP")
+    return False
 
 def test_single_schedule():
     """Test the single schedule endpoint."""

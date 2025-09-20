@@ -171,31 +171,13 @@ def get_sections(term: str, course_codes: List[str], include_recitations: bool =
                 credits=3
             ))
 
-    # If no sections found, try to get course information from web search
-    if not out:
-        logger.info("No sections found via API, attempting web search")
-        from agents.gemini import search_course_catalog
-        
-        for code in course_codes:
-            try:
-                # Search for course information online
-                courses = search_course_catalog("University of Pittsburgh", course_code=code)
-                if courses:
-                    course = courses[0]  # Take the first result
-                    # Create a mock section with basic info
-                    out.append(Section(
-                        course=code,
-                        crn="TBD",  # To be determined
-                        section="LEC-001",
-                        days=["TBD"],
-                        start="TBD",
-                        end="TBD",
-                        location="TBD",
-                        instructor="TBD",
-                        credits=course.get("credits", 3)
-                    ))
-            except Exception as e:
-                logger.warning(f"Could not find course information for {code}: {e}")
-                continue
+    # Log courses that had no sections found
+    courses_without_sections = []
+    for code in course_codes:
+        if not any(s.course == code for s in out):
+            courses_without_sections.append(code)
+    
+    if courses_without_sections:
+        logger.warning(f"No sections found for courses: {courses_without_sections}")
 
     return out

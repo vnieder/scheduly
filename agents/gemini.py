@@ -3,8 +3,16 @@ from dotenv import load_dotenv
 from google import genai
 import requests
 from typing import List, Dict, Optional
+import time
+import logging
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+# Prerequisite cache to avoid API rate limits
+_prereq_cache = {}
+PREREQ_CACHE_TTL = 3600  # 1 hour
 
 # Initialize the client with the API key
 api_key = os.getenv("GEMINI_API_KEY")
@@ -73,7 +81,17 @@ def parse_preferences(utterance:str)->dict:
     return resp.parsed or {}
 
 def search_course_prerequisites(course_code: str, school: str = "University of Pittsburgh") -> List[str]:
-    """Search for course prerequisites using web search and AI parsing."""
+    """Search for course prerequisites using web search and AI parsing with caching."""
+    cache_key = f"{school}:{course_code}"
+    current_time = time.time()
+    
+    # Check cache first
+    if cache_key in _prereq_cache:
+        cached_data, timestamp = _prereq_cache[cache_key]
+        if current_time - timestamp < PREREQ_CACHE_TTL:
+            logger.info(f"Using cached prerequisites for {course_code}")
+            return cached_data
+    
     try:
         # Use Gemini with web search to find prerequisites
         prompt = f"""Find the prerequisites for {course_code} at {school}. 
@@ -108,27 +126,54 @@ Return format: ["CS0401", "MATH0220"] or []"""
         )
         
         # Parse the response
+        prerequisites = []
         if resp.parsed:
             if isinstance(resp.parsed, list):
-                return resp.parsed
+                prerequisites = resp.parsed
             elif isinstance(resp.parsed, dict) and "prerequisites" in resp.parsed:
-                return resp.parsed["prerequisites"]
+                prerequisites = resp.parsed["prerequisites"]
         
         # Fallback: try to extract from text response
-        if resp.text:
+        if not prerequisites and resp.text:
             import re
             # Look for course codes in the response
             course_pattern = r'\b[A-Z]{2,4}\d{3,4}\b'
             matches = re.findall(course_pattern, resp.text)
             # Filter out the course code itself
             filtered_matches = [match for match in matches if match != course_code]
-            return list(set(filtered_matches))  # Remove duplicates
+            prerequisites = list(set(filtered_matches))  # Remove duplicates
         
-        return []
+        # Cache the result
+        _prereq_cache[cache_key] = (prerequisites, current_time)
+        logger.info(f"Cached prerequisites for {course_code}: {prerequisites}")
+        
+        return prerequisites
         
     except Exception as e:
-        print(f"Error searching for prerequisites for {course_code}: {e}")
+        logger.error(f"Error searching for prerequisites for {course_code}: {e}")
+        # Cache empty result to avoid repeated failed requests
+        _prereq_cache[cache_key] = ([], current_time)
         return []
+
+def batch_search_prerequisites(course_codes: List[str], school: str = "University of Pittsburgh") -> Dict[str, List[str]]:
+    """Search prerequisites for multiple courses with rate limiting."""
+    results = {}
+    
+    for i, course_code in enumerate(course_codes):
+        try:
+            # Add small delay to avoid rate limits (1 second between requests)
+            if i > 0:
+                time.sleep(1)
+            
+            prerequisites = search_course_prerequisites(course_code, school)
+            results[course_code] = prerequisites
+            logger.info(f"Found {len(prerequisites)} prerequisites for {course_code}")
+            
+        except Exception as e:
+            logger.error(f"Failed to get prerequisites for {course_code}: {e}")
+            results[course_code] = []
+    
+    return results
 
 def search_course_catalog(school: str, subject: str = None, course_code: str = None) -> List[Dict]:
     """Search for courses in the university catalog using web search."""
@@ -407,10 +452,25 @@ def get_requirements_with_prereqs(school: str, major: str) -> dict:
             "options": cleaned_options
         })
     
-    # Skip prerequisite search for now to avoid API rate limits
-    # TODO: Implement batch prerequisite search or caching
+    # Search for prerequisites with caching and rate limiting
+    all_course_codes = cleaned_required + [option for gen_ed in cleaned_gen_eds for option in gen_ed["options"]] + [option for choice in cleaned_choose_from for option in choice["options"]]
+    unique_courses = list(set(all_course_codes))
+    
+    logger.info(f"Searching prerequisites for {len(unique_courses)} unique courses")
+    prereq_results = batch_search_prerequisites(unique_courses, school)
+    
+    # Build prerequisite lists
     prereqs = []
     multi_semester_prereqs = []
+    
+    for course, prerequisites in prereq_results.items():
+        if prerequisites:
+            # For now, treat all prerequisites as same-semester (can be taken together)
+            # In the future, this could be enhanced to distinguish between same-semester and multi-semester prereqs
+            prereqs.append({
+                "course": course,
+                "requires": prerequisites
+            })
     
     # Convert to dict and add cleaned data
     req_dict = requirements.model_dump()

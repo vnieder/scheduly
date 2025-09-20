@@ -88,69 +88,10 @@ def test_optimize_interactive(session_id):
         print(f"❌ Error: {response.status_code} - {response.text}")
 
 def test_semester_planning():
-    print("📅 Planning multiple semesters...")
-    
-    try:
-        # Ask for major
-        major = input("What major are you? (e.g., 'Computer Science', 'Mathematics', 'Engineering'): ").strip()
-        if not major:
-            major = "Computer Science"
-            print(f"Using default major: {major}")
-    except EOFError:
-        major = "Computer Science"
-        print(f"Using default major: {major}")
-    
-    try:
-        # Ask for number of semesters
-        num_semesters = input("How many semesters to plan? (default 4): ").strip()
-        if not num_semesters:
-            num_semesters = 4
-        else:
-            num_semesters = int(num_semesters)
-    except (EOFError, ValueError):
-        num_semesters = 4
-        print(f"Using default semesters: {num_semesters}")
-    
-    try:
-        # Ask for preferences
-        preferences = input("Enter preferences (e.g., 'no Friday, start after 10am'): ").strip()
-        if not preferences:
-            preferences = "no Friday, start after 10am"
-            print(f"Using default preferences: {preferences}")
-    except EOFError:
-        preferences = "no Friday, start after 10am"
-        print(f"Using default preferences: {preferences}")
-    
-    payload = {
-        "school": "Pitt",
-        "major": major,
-        "starting_term": "2251",
-        "num_semesters": num_semesters,
-        "utterance": preferences
-    }
-    
-    response = requests.post(f"{BASE_URL}/plan-semesters", json=payload)
-    if response.status_code == 200:
-        data = response.json()
-        print("✅ Multi-semester plan created successfully!")
-        print(f"Total semesters planned: {data['total_semesters']}")
-        
-        for semester in data['semester_plans']:
-            plan = semester['plan']
-            print(f"\n📚 {semester['semester']} (Term: {semester['term']})")
-            print(f"   Total Credits: {plan['totalCredits']}")
-            print(f"   Courses: {len(plan['sections'])}")
-            for section in plan['sections']:
-                print(f"     • {section['course']} {section['section']} - {section['days']} {section['start']}-{section['end']}")
-            if plan['explanations']:
-                print(f"   Notes: {'; '.join(plan['explanations'])}")
-        
-        return data
-    else:
-        print(f"❌ Error: {response.status_code} - {response.text}")
-        if "429" in str(response.status_code) or "RESOURCE_EXHAUSTED" in response.text:
-            print("⚠️  Rate limit exceeded. Please wait before trying again.")
-        return None
+    print("📅 Multi-semester planning is not available in MVP")
+    print("This feature has been removed in favor of single-semester planning.")
+    print("Use option 1 to build a schedule for the next semester.")
+    return None
 
 def main():
     print("🚀 Scheduly Backend Interactive Tester")
