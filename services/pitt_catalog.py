@@ -1,7 +1,14 @@
-# services/pitt_catalog.py
 from typing import List
 from models.schemas import Section
 import requests
+import logging
+import time
+
+logger = logging.getLogger(__name__)
+
+# Simple in-memory cache with timestamps
+_cache = {}
+CACHE_TTL = 600  # 10 minutes
 
 # Endpoints lifted from your PittAPI course.py (no CSRF needed for these GETs)
 SUBJECT_COURSES_API = (
@@ -34,31 +41,84 @@ def _split(code: str) -> tuple[str, str]:
         num = ("0" * (4 - len(num))) + num
     return sub, num
 
+def _is_likely_recitation(section_num: str, days: list[str]) -> bool:
+    """Heuristic to identify recitation sections."""
+    return (len(days) == 1 and days[0] in {"Fri", "Thu"})
+
 def _get_course_id(subject: str, number4: str) -> str | None:
-    r = requests.get(SUBJECT_COURSES_API.format(subject=subject), timeout=20)
-    r.raise_for_status()
-    data = r.json()
-    for c in data.get("courses", []):
-        # catalog_nbr is zero-padded like "0150", "1501", etc.
-        if str(c.get("catalog_nbr")) == number4:
-            return str(c.get("crse_id"))
-    return None
+    cache_key = f"course_id:{subject}"
+    current_time = time.time()
+    
+    # Check cache first
+    if cache_key in _cache:
+        cached_data, timestamp = _cache[cache_key]
+        if current_time - timestamp < CACHE_TTL:
+            # Find the specific course in cached data
+            for c in cached_data.get("courses", []):
+                if str(c.get("catalog_nbr")) == number4:
+                    return str(c.get("crse_id"))
+            return None
+    
+    for attempt in range(2):  # Retry once
+        try:
+            r = requests.get(SUBJECT_COURSES_API.format(subject=subject), timeout=20)
+            r.raise_for_status()
+            data = r.json()
+            
+            # Cache the response
+            _cache[cache_key] = (data, current_time)
+            
+            for c in data.get("courses", []):
+                # catalog_nbr is zero-padded like "0150", "1501", etc.
+                if str(c.get("catalog_nbr")) == number4:
+                    return str(c.get("crse_id"))
+            return None
+        except Exception as e:
+            if attempt == 0:
+                logger.warning(f"Failed to get course ID for {subject} {number4}, retrying: {e}")
+                time.sleep(1)
+            else:
+                logger.error(f"Failed to get course ID for {subject} {number4} after retry: {e}")
+                return None
 
 def _fetch_sections(term: str, course_id: str) -> list[dict]:
-    r = requests.get(COURSE_SECTIONS_API.format(course_id=course_id, term=term), timeout=20)
-    r.raise_for_status()
-    return r.json().get("sections", [])
+    cache_key = f"sections:{term}:{course_id}"
+    current_time = time.time()
+    
+    # Check cache first
+    if cache_key in _cache:
+        cached_data, timestamp = _cache[cache_key]
+        if current_time - timestamp < CACHE_TTL:
+            return cached_data.get("sections", [])
+    
+    for attempt in range(2):  # Retry once
+        try:
+            r = requests.get(COURSE_SECTIONS_API.format(course_id=course_id, term=term), timeout=20)
+            r.raise_for_status()
+            data = r.json()
+            
+            # Cache the response
+            _cache[cache_key] = (data, current_time)
+            
+            return data.get("sections", [])
+        except Exception as e:
+            if attempt == 0:
+                logger.warning(f"Failed to fetch sections for course_id {course_id}, retrying: {e}")
+                time.sleep(1)
+            else:
+                logger.error(f"Failed to fetch sections for course_id {course_id} after retry: {e}")
+                return []
 
 def _norm_days(raw) -> list[str]:
     if isinstance(raw, list): return raw
     if not isinstance(raw, str): return []
     # Convert "MoWeFr" style into ["Mon","Wed","Fri"]
     m = (raw.replace("Mo","Mon ").replace("Tu","Tue ")
-             .replace("We","Wed ").replace("Th","Thu ")
-             .replace("Fr","Fri ").replace("Sa","Sat ").replace("Su","Sun "))
+            .replace("We","Wed ").replace("Th","Thu ")
+            .replace("Fr","Fri ").replace("Sa","Sat ").replace("Su","Sun "))
     return [d for d in m.split() if d]
 
-def get_sections(term: str, course_codes: List[str]) -> List[Section]:
+def get_sections(term: str, course_codes: List[str], include_recitations: bool = False) -> List[Section]:
     out: List[Section] = []
 
     for code in course_codes:
@@ -85,6 +145,10 @@ def get_sections(term: str, course_codes: List[str]) -> List[Section]:
             else:
                 days, start, end = [], "00:00", "00:00"
 
+            # Skip recitation sections unless explicitly requested
+            if not include_recitations and _is_likely_recitation(section_num, days):
+                continue
+
             instructors = s.get("instructors", [])
             instructor_name = None
             if instructors and isinstance(instructors, list):
@@ -109,10 +173,11 @@ def get_sections(term: str, course_codes: List[str]) -> List[Section]:
 
     # Fallback mock so your demo is always live
     if not out:
+        logger.info("No sections found, using mock data")
         MOCK = {
-          "CS0445":[{"crn":"45678","section":"LEC-201","days":["Tue","Thu"],"start":"11:00","end":"12:15","location":"SENSQ 5317","credits":3}],
-          "CS1501":[{"crn":"78901","section":"LEC-101","days":["Mon","Wed","Fri"],"start":"10:00","end":"10:50","credits":3}],
-          "CS1550":[{"crn":"12345","section":"LEC-101","days":["Mon","Wed","Fri"],"start":"09:00","end":"09:50","credits":3}]
+        "CS0445":[{"crn":"45678","section":"LEC-201","days":["Tue","Thu"],"start":"11:00","end":"12:15","location":"SENSQ 5317","credits":3}],
+        "CS1501":[{"crn":"78901","section":"LEC-101","days":["Mon","Wed","Fri"],"start":"10:00","end":"10:50","credits":3}],
+        "CS1550":[{"crn":"12345","section":"LEC-101","days":["Mon","Wed","Fri"],"start":"09:00","end":"09:50","credits":3}]
         }
         for code in course_codes:
             for s in MOCK.get(code, []):
