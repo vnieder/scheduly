@@ -52,6 +52,8 @@ def test_build_interactive():
         return data['session_id']
     else:
         print(f"❌ Error: {response.status_code} - {response.text}")
+        if "429" in str(response.status_code) or "RESOURCE_EXHAUSTED" in response.text:
+            print("⚠️  Rate limit exceeded. Please wait before trying again.")
         return None
 
 def test_optimize_interactive(session_id):
@@ -88,22 +90,34 @@ def test_optimize_interactive(session_id):
 def test_semester_planning():
     print("📅 Planning multiple semesters...")
     
-    # Ask for major
-    major = input("What major are you? (e.g., 'Computer Science', 'Mathematics', 'Engineering'): ").strip()
-    if not major:
+    try:
+        # Ask for major
+        major = input("What major are you? (e.g., 'Computer Science', 'Mathematics', 'Engineering'): ").strip()
+        if not major:
+            major = "Computer Science"
+            print(f"Using default major: {major}")
+    except EOFError:
         major = "Computer Science"
         print(f"Using default major: {major}")
     
-    # Ask for number of semesters
-    num_semesters = input("How many semesters to plan? (default 4): ").strip()
-    if not num_semesters:
+    try:
+        # Ask for number of semesters
+        num_semesters = input("How many semesters to plan? (default 4): ").strip()
+        if not num_semesters:
+            num_semesters = 4
+        else:
+            num_semesters = int(num_semesters)
+    except (EOFError, ValueError):
         num_semesters = 4
-    else:
-        num_semesters = int(num_semesters)
+        print(f"Using default semesters: {num_semesters}")
     
-    # Ask for preferences
-    preferences = input("Enter preferences (e.g., 'no Friday, start after 10am'): ").strip()
-    if not preferences:
+    try:
+        # Ask for preferences
+        preferences = input("Enter preferences (e.g., 'no Friday, start after 10am'): ").strip()
+        if not preferences:
+            preferences = "no Friday, start after 10am"
+            print(f"Using default preferences: {preferences}")
+    except EOFError:
         preferences = "no Friday, start after 10am"
         print(f"Using default preferences: {preferences}")
     
@@ -134,6 +148,8 @@ def test_semester_planning():
         return data
     else:
         print(f"❌ Error: {response.status_code} - {response.text}")
+        if "429" in str(response.status_code) or "RESOURCE_EXHAUSTED" in response.text:
+            print("⚠️  Rate limit exceeded. Please wait before trying again.")
         return None
 
 def main():
@@ -161,7 +177,11 @@ def main():
         print("4. Plan multiple semesters")
         print("5. Exit")
         
-        choice = input("\nEnter choice (1-5): ").strip()
+        try:
+            choice = input("\nEnter choice (1-5): ").strip()
+        except EOFError:
+            print("\n👋 Goodbye!")
+            break
         
         if choice == "1":
             session_id = test_build_interactive()
@@ -186,6 +206,8 @@ def main():
                     print(f"  ... and {len(data['sections']) - 5} more sections")
             else:
                 print(f"❌ Error: {response.status_code} - {response.text}")
+                if "429" in str(response.status_code) or "RESOURCE_EXHAUSTED" in response.text:
+                    print("⚠️  Rate limit exceeded. Please wait before trying again.")
         elif choice == "4":
             test_semester_planning()
         elif choice == "5":

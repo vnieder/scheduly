@@ -1,47 +1,96 @@
 from models.schemas import RequirementSet
+from agents.gemini import client, MODEL, requirement_set_schema
+import logging
 
-CURATED = {
-  ("pitt","computer science"): RequirementSet(
-     catalogYear="2025-2026",
-     required=["CS0401","CS0441","CS0445","CS1501","CS1502","CS1550"],
-     genEds=[
-         {"label": "Writing Intensive", "count": 1, "options": ["ENGCMP0200","ENGCMP0205","ENGCMP0207"]},
-         {"label": "Literature", "count": 1, "options": ["ENGLIT0200","ENGLIT0400","ENGLIT0500"]},
-         {"label": "History", "count": 1, "options": ["HIST0100","HIST0600","HIST0700"]},
-         {"label": "Social Science", "count": 1, "options": ["PSY0010","SOC0010","ANTH0780"]},
-         {"label": "Natural Science", "count": 1, "options": ["BIOSC0150","CHEM0110","PHYS0174"]},
-         {"label": "Arts", "count": 1, "options": ["MUSIC0211","THEA0800","ARTSC0100"]},
-         {"label": "Philosophy", "count": 1, "options": ["PHIL0080","PHIL0300","PHIL0400"]}
-     ],
-     chooseFrom=[
-         {"label": "Upper Level CS Electives", "count": 2, "options": ["CS1621","CS1653","CS1674","CS1699","CS1695","CS1690"]},
-         {"label": "Math Requirements", "count": 3, "options": ["MATH0220","MATH0230","MATH1180","STAT1151"]}
-     ],
-     minCredits=12, maxCredits=18, 
-     prereqs=[],
-     multiSemesterPrereqs=[
-         {"course": "CS1502", "requires": ["CS1501"]},  # Must take CS1501 in previous semester
-         {"course": "CS1621", "requires": ["CS0445"]},  # Must take CS0445 in previous semester
-         {"course": "CS1653", "requires": ["CS0445"]},  # Must take CS0445 in previous semester
-         {"course": "CS1674", "requires": ["CS0445"]},  # Must take CS0445 in previous semester
-         {"course": "CS1699", "requires": ["CS0445"]}   # Must take CS0445 in previous semester
-     ]
-  )
-}
+logger = logging.getLogger(__name__)
 
-def get_requirements(school:str, major:str) -> RequirementSet:
-    key = (school.lower(), major.lower())
-    if key in CURATED:
-        return CURATED[key]
-    from agents.gemini import client, MODEL, requirement_set_schema
-    prompt = f"""Find the official degree requirements for {school} {major}.
-Output JSON only, matching the schema. Normalize course codes exactly as on the page."""
-    resp = client.models.generate_content(
-        model=MODEL,
-        config={"response_mime_type":"application/json",
+def get_requirements(school: str, major: str) -> RequirementSet:
+    """Dynamically fetch degree requirements using web search and AI parsing."""
+    
+    # Create a comprehensive prompt for finding all degree requirements
+    prompt = f"""Find the complete official degree requirements for {school} {major} program.
+
+Search the university's official course catalog, academic bulletin, department website, or degree requirements page.
+
+Look for:
+1. Required courses for the {major} major
+2. General education requirements (writing, literature, history, social science, natural science, arts, philosophy, etc.)
+3. Elective requirements and options
+4. Credit hour requirements
+5. Prerequisite chains
+
+Return a JSON object with this EXACT structure:
+{{
+    "catalogYear": "current academic year (e.g., 2024-2025)",
+    "required": ["list of required course codes for the major"],
+    "genEds": [
+        {{
+            "label": "category name (e.g., Writing Intensive, Literature, History)",
+            "count": number_of_courses_required,
+            "options": ["list of specific course codes that satisfy this requirement"]
+        }}
+    ],
+    "chooseFrom": [
+        {{
+            "label": "elective category name (e.g., Upper Level Electives, Technical Electives)",
+            "count": number_of_courses_required,
+            "options": ["list of specific course codes to choose from"]
+        }}
+    ],
+    "minCredits": minimum_credits_per_semester,
+    "maxCredits": maximum_credits_per_semester
+}}
+
+CRITICAL REQUIREMENTS:
+- Find SPECIFIC course codes (e.g., CS0401, MATH0220, ENGCMP0200)
+- Include REAL course options for each gen ed category
+- Include REAL elective options with specific course codes
+- Use exact course codes as they appear on the university website
+- If you cannot find specific course codes, return empty arrays
+- Focus on undergraduate degree requirements only
+- Search multiple university web pages if needed
+
+School: {school}
+Major: {major}"""
+    
+    try:
+        resp = client.models.generate_content(
+            model=MODEL,
+            config={
+                "response_mime_type": "application/json",
                 "response_schema": requirement_set_schema,
-                "tools":[{"google_search":{}}]},
-        contents=[{"role":"user","parts":[{"text": prompt}]}]
-    )
-    data = resp.parsed or {"required":[]}
-    return RequirementSet(**data)
+                "tools": [{"google_search": {}}]
+            },
+            contents=[{"role": "user", "parts": [{"text": prompt}]}]
+        )
+        
+        # Parse the response
+        data = resp.parsed or {"required": []}
+        
+        # Validate and clean the data
+        if not isinstance(data, dict):
+            logger.warning(f"Invalid response format for {school} {major}")
+            data = {"required": []}
+        
+        # Ensure required fields exist
+        if "required" not in data:
+            data["required"] = []
+        if "genEds" not in data:
+            data["genEds"] = []
+        if "chooseFrom" not in data:
+            data["chooseFrom"] = []
+            
+        logger.info(f"Successfully fetched requirements for {school} {major}")
+        return RequirementSet(**data)
+        
+    except Exception as e:
+        logger.error(f"Error fetching requirements for {school} {major}: {e}")
+        # Return minimal requirements structure
+        return RequirementSet(
+            catalogYear="2024-2025",
+            required=[],
+            genEds=[],
+            chooseFrom=[],
+            minCredits=12,
+            maxCredits=18
+        )

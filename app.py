@@ -188,16 +188,15 @@ def plan_semesters(p: SemesterPlanPayload):
         semester_plans = []
         completed_courses = []
         
-        # Generate term codes (simple increment for now)
-        term_codes = []
-        base_term = int(p.starting_term)
-        for i in range(p.num_semesters):
-            term_codes.append(str(base_term + i * 10))  # Increment by 10 for next semester
+        # Use the same term for all semesters since we're just planning
+        # (future terms won't have section data available)
+        term = p.starting_term
         
-        for i, term in enumerate(term_codes):
-            # Get sections for available courses
-            sections = get_sections(term, all_courses)
-            
+        # Get sections for available courses (only once)
+        sections = get_sections(term, all_courses)
+        
+        # Generate semester plans
+        for i in range(p.num_semesters):
             # Build schedule for this semester
             plan = build_schedule(term, sections, preferences, requirements.prereqs, all_courses, requirements.multiSemesterPrereqs, completed_courses)
             
@@ -205,9 +204,12 @@ def plan_semesters(p: SemesterPlanPayload):
             semester_courses = [s.course for s in plan.sections]
             completed_courses.extend(semester_courses)
             
+            # Generate a unique term code for display purposes
+            display_term = str(int(p.starting_term) + i * 10)
+            
             semester_plans.append({
                 "semester": f"Semester {i+1}",
-                "term": term,
+                "term": display_term,
                 "plan": plan.model_dump()
             })
         
