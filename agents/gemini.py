@@ -3,7 +3,13 @@ from dotenv import load_dotenv
 from google import genai
 
 load_dotenv()
-client = genai.Client()
+
+# Initialize the client with the API key
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY environment variable is not set. Please add it to your .env file.")
+
+client = genai.Client(api_key=api_key)
 MODEL = "gemini-2.0-flash" # todo: update to latest model
 
 requirement_set_schema = {
