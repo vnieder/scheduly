@@ -12,11 +12,13 @@ class Prereq(BaseModel):
 
 class RequirementSet(BaseModel):
     catalogYear: Optional[str] = None
-    required: List[str]
-    chooseFrom: List[ChooseFrom] = []
+    required: List[str] = []  # Major requirements
+    genEds: List[ChooseFrom] = []  # General education requirements
+    chooseFrom: List[ChooseFrom] = []  # Major electives
     minCredits: Optional[int] = None
     maxCredits: Optional[int] = None
     prereqs: List[Prereq] = []
+    multiSemesterPrereqs: List[Prereq] = []  # Prerequisites that must be taken in previous semesters
 
 class Section(BaseModel):
     course: str
