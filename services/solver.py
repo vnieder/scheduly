@@ -125,9 +125,10 @@ def build_schedule(term: str, sections: List[Section], prefs: Preferences, prere
         if any(_overlap(s, c) for c in chosen):
             continue
         
-        # Limit to reasonable number of courses per semester (5-6 courses max)
-        if len(chosen) >= 6:
-            explanations.append(f"Reached maximum courses per semester (6)")
+        # Limit to configurable number of courses per semester
+        from app import MAX_COURSES_PER_SEMESTER
+        if len(chosen) >= MAX_COURSES_PER_SEMESTER:
+            explanations.append(f"Reached maximum courses per semester ({MAX_COURSES_PER_SEMESTER})")
             break
             
         chosen.append(s)
