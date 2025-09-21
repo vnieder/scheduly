@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "🚀 Deploying CORS Proxy to Railway..."
+echo ""
+echo "1. Create a new Railway project"
+echo "2. Connect this directory to the new project"
+echo "3. Railway will automatically deploy the CORS proxy"
+echo ""
+echo "After deployment, you'll get a URL like:"
+echo "https://scheduly-cors-proxy-production.railway.app"
+echo ""
+echo "Then update your frontend environment variable:"
+echo "NEXT_PUBLIC_API_URL=https://scheduly-cors-proxy-production.railway.app"
+echo ""
+echo "And update your API calls to use the proxy format:"
+echo "https://scheduly-cors-proxy-production.railway.app/https://scheduly-backend-production.railway.app/build"

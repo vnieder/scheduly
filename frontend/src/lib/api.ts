@@ -1,4 +1,8 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Use Next.js API proxy to bypass CORS issues
+const API_BASE_URL = "/api/proxy";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://scheduly-backend-production.railway.app";
 
 // Core data types matching backend schemas
 export interface ChooseFrom {
@@ -89,19 +93,19 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    // Ensure no double slashes in URL
-    const baseUrl = this.baseUrl.endsWith("/")
-      ? this.baseUrl.slice(0, -1)
-      : this.baseUrl;
-    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-    const url = `${baseUrl}${cleanEndpoint}`;
+    // Use Next.js API proxy to bypass CORS
+    const url = this.baseUrl;
 
     const config: RequestInit = {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
       },
-      ...options,
+      body: JSON.stringify({
+        endpoint: endpoint,
+        ...(options.body ? JSON.parse(options.body as string) : {}),
+      }),
     };
 
     try {
