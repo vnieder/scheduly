@@ -27,10 +27,14 @@ app.add_middleware(
         "http://localhost:3000", 
         "https://scheduly.space", 
         "https://www.scheduly.space",
+        "https://railway.com",
+        "https://*.railway.app",
+        "https://*.vercel.app"
     ],
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     allow_credentials=True,
+    expose_headers=["*"],
 )
 
 # Configuration from environment variables
