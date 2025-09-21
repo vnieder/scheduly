@@ -4,7 +4,7 @@ Build your dream schedule
 
 ## Demo
 
-https://youtu.be/QnAoNaTBdOU
+[Watch the demo](./Scheduly_demo.mp4)
 
 ## Contributors
 Vincent Niedermayer - VMN16@pitt.edu
