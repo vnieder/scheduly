@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import uuid
@@ -22,16 +21,24 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Scheduly Backend")
 
 # Add CORS middleware
-# Add custom CORS middleware that properly handles subdomains
 allowed_origins = [
     "http://localhost:3000", 
     "https://scheduly.space", 
     "https://www.scheduly.space",
     "https://scheduly-backend-production.railway.app",
     "https://scheduly.vercel.app",
+    "https://*.railway.app",  # Allow all Railway subdomains
+    "https://*.vercel.app",   # Allow all Vercel subdomains
 ]
 
-app.add_middleware(CustomCORSMiddleware, allowed_origins=allowed_origins)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    expose_headers=["Content-Length", "X-Total-Count"],
+)
 
 # Configuration from environment variables
 DEFAULT_TERM = os.getenv("DEFAULT_TERM", "2251")
@@ -61,61 +68,6 @@ elif LEGACY_USE_AI_PREREQUISITES == "false":
 from src.services.storage.session_manager import session_manager, get_session_storage
 from src.services.storage.session_storage import SessionStorage, SessionNotFoundError as StorageSessionNotFoundError
 
-# Custom CORS middleware to handle subdomains properly
-class CustomCORSMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, allowed_origins: list):
-        super().__init__(app)
-        self.allowed_origins = allowed_origins
-        self.allowed_domains = []
-        
-        # Parse allowed origins and extract domains for wildcard matching
-        for origin in allowed_origins:
-            if origin.startswith("https://*."):
-                # Extract domain like "railway.app" from "https://*.railway.app"
-                domain = origin.replace("https://*.", "")
-                self.allowed_domains.append(domain)
-    
-    def is_origin_allowed(self, origin: str) -> bool:
-        # Check exact matches first
-        if origin in self.allowed_origins:
-            return True
-        
-        # Check wildcard domain matches
-        if origin.startswith("https://"):
-            for domain in self.allowed_domains:
-                if origin.endswith(f".{domain}"):
-                    return True
-        
-        return False
-    
-    async def dispatch(self, request, call_next):
-        origin = request.headers.get("origin")
-        
-        # Handle preflight OPTIONS requests
-        if request.method == "OPTIONS":
-            if origin and self.is_origin_allowed(origin):
-                from fastapi.responses import Response
-                response = Response()
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-                response.headers["Access-Control-Max-Age"] = "86400"
-                return response
-            else:
-                from fastapi.responses import Response
-                return Response(status_code=403)
-        
-        # Handle actual requests
-        if origin and self.is_origin_allowed(origin):
-            response = await call_next(request)
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            return response
-        
-        return await call_next(request)
 
 class BuildPayload(BaseModel):
     school: str = DEFAULT_SCHOOL
@@ -213,6 +165,15 @@ def health_check():
             "ai_prerequisites": PRODUCTION_MODE,
             "multi_university": PRODUCTION_MODE
         }
+    }
+
+@app.get("/cors-test")
+def cors_test():
+    """Simple endpoint to test CORS configuration"""
+    return {
+        "message": "CORS is working!",
+        "timestamp": datetime.now().isoformat(),
+        "allowed_origins": allowed_origins
     }
 
 @app.post("/build")
