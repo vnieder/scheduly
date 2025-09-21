@@ -4,7 +4,7 @@ Next.js 15 + React 19 app using TypeScript and Tailwind CSS v4.
 
 ### Stack
 
-- Next.js 15 (App Router)
+- Next.js 15
 - React 19
 - TypeScript
 - Tailwind CSS v4
