@@ -45,7 +45,6 @@ export const GET = async (req: NextRequest) => {
   if (action === "callback") {
     // Handle the callback from Auth0
     const code = searchParams.get("code");
-    const state = searchParams.get("state");
 
     if (!code) {
       return NextResponse.json(

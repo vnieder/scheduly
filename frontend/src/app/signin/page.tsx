@@ -92,7 +92,7 @@ export default function SignInPage() {
             {/* Features List */}
             <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                What you'll get:
+                What you&apos;ll get:
               </h3>
               <ul className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-center">

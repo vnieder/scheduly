@@ -9,7 +9,7 @@ interface ScheduleHistory {
   name: string;
   createdAt: string;
   isFavorite: boolean;
-  scheduleData: any;
+  scheduleData: unknown;
 }
 
 interface HistorySidebarProps {

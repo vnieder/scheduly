@@ -2,11 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-type BlobConfig = {
-  initialX: number; // in px relative to container
-  initialY: number; // in px relative to container
-  className: string;
-};
 
 export default function BackgroundFX() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -47,7 +42,6 @@ export default function BackgroundFX() {
     let rafId = 0;
 
     const tick = () => {
-      const rect = container.getBoundingClientRect();
 
       for (let i = 0; i < blobNodes.length; i++) {
         const node = blobNodes[i];

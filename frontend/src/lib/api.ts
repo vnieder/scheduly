@@ -1,8 +1,5 @@
 // Use Next.js API proxy to bypass CORS issues
 const API_BASE_URL = "/api/proxy";
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://scheduly-backend-production.railway.app";
 
 // Core data types matching backend schemas
 export interface ChooseFrom {
