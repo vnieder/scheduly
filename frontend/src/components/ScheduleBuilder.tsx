@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { apiClient, BuildScheduleResponse } from "@/lib/api";
-import { useUser } from "@/lib/user-context";
 
 type FormStep = "school" | "major" | "loading" | "calendar";
 
@@ -16,7 +15,9 @@ export default function ScheduleBuilder({
   onScheduleBuilt,
   onAuthRequired,
 }: ScheduleBuilderProps) {
-  const { user, isLoading } = useUser();
+  // Temporarily disable user context
+  const user = null;
+  const isLoading = false;
   const [currentStep, setCurrentStep] = useState<FormStep>("school");
   const [school, setSchool] = useState("");
   const [major, setMajor] = useState("");

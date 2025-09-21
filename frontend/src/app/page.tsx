@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@/lib/user-context";
 import { useRouter } from "next/navigation";
 import ScheduleBuilder from "@/components/ScheduleBuilder";
 import ScheduleCalendar from "@/components/ScheduleCalendar";
-import HistorySidebar from "@/components/HistorySidebar";
+// import HistorySidebar from "@/components/HistorySidebar";
 import { BuildScheduleResponse } from "@/lib/api";
 
 export default function Home() {
-  const { user, isLoading } = useUser();
+  // Temporarily disable user context
+  const user = null;
+  const isLoading = false;
   const router = useRouter();
   const [scheduleData, setScheduleData] =
     useState<BuildScheduleResponse | null>(null);
@@ -70,9 +71,10 @@ export default function Home() {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect to signin
-  }
+  // Temporarily allow unauthenticated users to see the form
+  // if (!user) {
+  //   return null; // Will redirect to signin
+  // }
 
   if (showCalendar && scheduleData) {
     return (
@@ -82,12 +84,12 @@ export default function Home() {
           onBack={handleBackToBuilder}
           onShowHistory={() => setShowHistorySidebar(true)}
         />
-        <HistorySidebar
+        {/* <HistorySidebar
           isOpen={showHistorySidebar}
           onClose={() => setShowHistorySidebar(false)}
           onLoadSchedule={handleLoadSchedule}
           onSaveCurrentSchedule={handleSaveCurrentSchedule}
-        />
+        /> */}
       </>
     );
   }

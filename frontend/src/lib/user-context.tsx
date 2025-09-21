@@ -20,19 +20,24 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start as false to avoid blocking render
 
   useEffect(() => {
     // Check if user is logged in by checking for session cookie
     const checkAuth = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch("/api/auth/me");
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
+        } else {
+          // 401 is expected when not logged in, don't log as error
+          setUser(null);
         }
       } catch (error) {
-        console.log("No user session found");
+        // Network error or other issue
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
