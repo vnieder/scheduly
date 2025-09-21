@@ -15,7 +15,7 @@ export default function Home() {
   const [scheduleData, setScheduleData] =
     useState<BuildScheduleResponse | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [showHistorySidebar, setShowHistorySidebar] = useState(false);
+  const [, setShowHistorySidebar] = useState(false);
   const [requiresAuth, setRequiresAuth] = useState(false);
 
   // Check if user needs to be authenticated for the current action
@@ -39,29 +39,29 @@ export default function Home() {
     setScheduleData(null);
   };
 
-  const handleSaveCurrentSchedule = async () => {
-    if (!scheduleData || !user) return;
+  // const handleSaveCurrentSchedule = async () => {
+  //   if (!scheduleData || !user) return;
 
-    try {
-      // This would be implemented to save the current schedule
-      console.log("Saving current schedule...", scheduleData);
-      // You would call the API here to save the schedule
-    } catch (error) {
-      console.error("Failed to save schedule:", error);
-    }
-  };
+  //   try {
+  //     // This would be implemented to save the current schedule
+  //     console.log("Saving current schedule...", scheduleData);
+  //     // You would call the API here to save the schedule
+  //   } catch (error) {
+  //     console.error("Failed to save schedule:", error);
+  //   }
+  // };
 
-  const handleLoadSchedule = async (scheduleId: string) => {
-    if (!user) return;
+  // const handleLoadSchedule = async (scheduleId: string) => {
+  //   if (!user) return;
 
-    try {
-      // This would be implemented to load a saved schedule
-      console.log("Loading schedule:", scheduleId);
-      // You would call the API here to load the schedule
-    } catch (error) {
-      console.error("Failed to load schedule:", error);
-    }
-  };
+  //   try {
+  //     // This would be implemented to load a saved schedule
+  //     console.log("Loading schedule:", scheduleId);
+  //     // You would call the API here to load the schedule
+  //   } catch (error) {
+  //     console.error("Failed to load schedule:", error);
+  //   }
+  // };
 
   if (isLoading) {
     return (

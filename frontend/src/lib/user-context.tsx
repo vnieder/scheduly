@@ -35,7 +35,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           // 401 is expected when not logged in, don't log as error
           setUser(null);
         }
-      } catch (error) {
+      } catch {
         // Network error or other issue
         setUser(null);
       } finally {

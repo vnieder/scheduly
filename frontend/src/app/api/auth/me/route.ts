@@ -20,7 +20,7 @@ export const GET = async (req: NextRequest) => {
     }
 
     return NextResponse.json(sessionData.user);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Invalid session" }, { status: 401 });
   }
 };
