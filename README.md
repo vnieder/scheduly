@@ -115,10 +115,10 @@ Fetch available sections for specific courses.
 
 ## Architecture
 
-The backend follows a clean, organized structure:
+The backend follows a clean, organized structure with all API endpoints centralized in `app.py` for simplicity:
 
-### Core Application (`src/`)
-- **`app.py`**: FastAPI application with session management and orchestration
+### Core Application
+- **`app.py`**: FastAPI application with all API endpoints, session management, and orchestration
 - **`src/models/schemas.py`**: Pydantic models for data validation
 - **`src/agents/gemini.py`**: Gemini AI integration for preference parsing
 
@@ -183,7 +183,7 @@ For more details, see [SESSION_STORAGE_IMPLEMENTATION.md](SESSION_STORAGE_IMPLEM
 
 ```
 scheduly/
-├── app.py                           # Main FastAPI application
+├── app.py                           # Main FastAPI application with all API endpoints
 ├── requirements.txt                 # Python dependencies
 ├── README.md                       # This file
 ├── SESSION_STORAGE_IMPLEMENTATION.md # Session storage documentation
