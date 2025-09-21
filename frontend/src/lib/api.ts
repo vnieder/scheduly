@@ -68,6 +68,59 @@ export interface OptimizeScheduleResponse {
   plan: SchedulePlan;
 }
 
+export interface ScheduleHistory {
+  id: string;
+  title: string;
+  school: string;
+  major: string;
+  term: string;
+  is_favorite: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SaveScheduleRequest {
+  session_id: string;
+  title?: string;
+}
+
+export interface SaveScheduleResponse {
+  id: string;
+  title: string;
+  school: string;
+  major: string;
+  term: string;
+  created_at: string;
+}
+
+export interface GetSchedulesResponse {
+  schedules: ScheduleHistory[];
+}
+
+export interface GetScheduleResponse {
+  id: string;
+  title: string;
+  school: string;
+  major: string;
+  term: string;
+  schedule_data: SchedulePlan;
+  is_favorite: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateScheduleRequest {
+  title?: string;
+  is_favorite?: boolean;
+}
+
+export interface UserProfile {
+  sub: string;
+  email: string;
+  name: string;
+  picture: string;
+}
+
 export interface HealthCheckResponse {
   ok: boolean;
   mode: string;
@@ -154,9 +207,86 @@ class ApiClient {
   async optimizeSchedule(
     data: OptimizeScheduleRequest
   ): Promise<OptimizeScheduleResponse> {
-    return this.request<OptimizeScheduleResponse>("/proxy/optimize", {
+    return this.request<OptimizeScheduleResponse>("/optimize", {
       method: "POST",
       body: JSON.stringify(data),
+    });
+  }
+
+  // User and Schedule Management Methods
+  async saveSchedule(
+    data: SaveScheduleRequest,
+    authToken: string
+  ): Promise<SaveScheduleResponse> {
+    return this.request<SaveScheduleResponse>("/schedules", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+  }
+
+  async getUserSchedules(
+    authToken: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<GetSchedulesResponse> {
+    return this.request<GetSchedulesResponse>(
+      `/schedules?limit=${limit}&offset=${offset}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      }
+    );
+  }
+
+  async getSchedule(
+    scheduleId: string,
+    authToken: string
+  ): Promise<GetScheduleResponse> {
+    return this.request<GetScheduleResponse>(`/schedules/${scheduleId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+  }
+
+  async updateSchedule(
+    scheduleId: string,
+    data: UpdateScheduleRequest,
+    authToken: string
+  ): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/schedules/${scheduleId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+  }
+
+  async deleteSchedule(
+    scheduleId: string,
+    authToken: string
+  ): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/schedules/${scheduleId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+  }
+
+  async getUserProfile(authToken: string): Promise<UserProfile> {
+    return this.request<UserProfile>("/user/profile", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
   }
 }
