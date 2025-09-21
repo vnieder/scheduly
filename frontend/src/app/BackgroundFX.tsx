@@ -48,8 +48,6 @@ export default function BackgroundFX() {
 
     const tick = () => {
       const rect = container.getBoundingClientRect();
-      const cx = rect.width * 0.5;
-      const cy = rect.height * 0.5;
 
       for (let i = 0; i < blobNodes.length; i++) {
         const node = blobNodes[i];
@@ -134,8 +132,6 @@ export default function BackgroundFX() {
     // Save initial absolute offsets from container (for distance calc)
     const left = el.style.left ? parseFloat(el.style.left) : 0;
     const top = el.style.top ? parseFloat(el.style.top) : 0;
-    const right = el.style.right ? parseFloat(el.style.right) : NaN;
-    const bottom = el.style.bottom ? parseFloat(el.style.bottom) : NaN;
 
     // Convert right/bottom positioning into left/top by measuring container size later at runtime.
     // Here we store baseLeft/baseTop as provided to estimate position for interactions.

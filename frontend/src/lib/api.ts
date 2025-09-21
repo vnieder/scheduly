@@ -1,5 +1,47 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// Core data types matching backend schemas
+export interface ChooseFrom {
+  label: string;
+  count: number;
+  options: string[];
+}
+
+export interface Prereq {
+  course: string;
+  requires: string[];
+}
+
+export interface RequirementSet {
+  catalogYear?: string;
+  required: string[];
+  genEds: ChooseFrom[];
+  chooseFrom: ChooseFrom[];
+  minCredits?: number;
+  maxCredits?: number;
+  prereqs: Prereq[];
+  multiSemesterPrereqs: Prereq[];
+}
+
+export interface Section {
+  course: string;
+  crn: string;
+  section: string;
+  days: string[] | string;
+  start: string;
+  end: string;
+  instructor?: string;
+  credits: number;
+}
+
+export interface SchedulePlan {
+  term: string;
+  totalCredits: number;
+  sections: Section[];
+  explanations: string[];
+  alternatives: Record<string, unknown>[];
+}
+
 export interface BuildScheduleRequest {
   school: string;
   major: string;
@@ -9,8 +51,8 @@ export interface BuildScheduleRequest {
 
 export interface BuildScheduleResponse {
   session_id: string;
-  requirements: any;
-  plan: any;
+  requirements: RequirementSet;
+  plan: SchedulePlan;
 }
 
 export interface OptimizeScheduleRequest {
@@ -19,7 +61,7 @@ export interface OptimizeScheduleRequest {
 }
 
 export interface OptimizeScheduleResponse {
-  plan: any;
+  plan: SchedulePlan;
 }
 
 export interface HealthCheckResponse {

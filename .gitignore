@@ -5,3 +5,4 @@ __pycache__/
 setup_env.py
 env_config.txt
 .vercel
+build/

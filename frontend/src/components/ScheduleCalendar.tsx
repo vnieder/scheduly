@@ -1,30 +1,11 @@
 'use client';
 
-import { BuildScheduleResponse } from '@/lib/api';
+import { BuildScheduleResponse, Section, SchedulePlan } from '@/lib/api';
 import { useState } from 'react';
 
 interface ScheduleCalendarProps {
   scheduleData: BuildScheduleResponse;
   onBack: () => void;
-}
-
-interface Section {
-  course: string;
-  crn: string;
-  section: string;
-  days: string[] | string;
-  start: string;
-  end: string;
-  instructor?: string;
-  credits: number;
-}
-
-interface SchedulePlan {
-  term: string;
-  totalCredits: number;
-  sections: Section[];
-  explanations: string[];
-  alternatives: any[];
 }
 
 interface CalendarEvent {
@@ -111,7 +92,7 @@ export default function ScheduleCalendar({ scheduleData, onBack }: ScheduleCalen
               No Schedule Found
             </h2>
             <p className="text-base sm:text-lg text-black/60 dark:text-white/60">
-              We couldn't find any available courses for your selection. Please try again with different parameters.
+              We couldn&apos;t find any available courses for your selection. Please try again with different parameters.
             </p>
             <div className="mt-8">
               <button
@@ -306,7 +287,7 @@ export default function ScheduleCalendar({ scheduleData, onBack }: ScheduleCalen
                     ))}
                     
                     {/* Events for this day */}
-                    {dayEvents.map((event, eventIndex) => {
+                    {dayEvents.map((event) => {
                       const topPercent = ((event.startMinutes - calendarStartMinutes) / (totalHours * 60)) * 100;
                       const heightPercent = (event.duration / (totalHours * 60)) * 100;
                       const courseIndex = sections.findIndex(s => s.crn === event.extendedProps.crn);
