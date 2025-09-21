@@ -1,112 +1,122 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { apiClient, BuildScheduleResponse } from '@/lib/api';
+import { useState } from "react";
+import { apiClient, BuildScheduleResponse } from "@/lib/api";
 
-type FormStep = 'school' | 'major' | 'loading' | 'calendar';
+type FormStep = "school" | "major" | "loading" | "calendar";
 
 interface ScheduleBuilderProps {
   onScheduleBuilt: (data: BuildScheduleResponse) => void;
 }
 
-export default function ScheduleBuilder({ onScheduleBuilt }: ScheduleBuilderProps) {
-  const [currentStep, setCurrentStep] = useState<FormStep>('school');
-  const [school, setSchool] = useState('');
-  const [major, setMajor] = useState('');
+export default function ScheduleBuilder({
+  onScheduleBuilt,
+}: ScheduleBuilderProps) {
+  const [currentStep, setCurrentStep] = useState<FormStep>("school");
+  const [school, setSchool] = useState("");
+  const [major, setMajor] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleContinue = async () => {
     setError(null);
-    
-    if (currentStep === 'school') {
+
+    if (currentStep === "school") {
       if (!school.trim()) {
-        setError('Please enter your school');
+        setError("Please enter your school");
         return;
       }
-      setCurrentStep('major');
-    } else if (currentStep === 'major') {
+      setCurrentStep("major");
+    } else if (currentStep === "major") {
       if (!major.trim()) {
-        setError('Please enter your major');
+        setError("Please enter your major");
         return;
       }
-      
+
       // Build schedule
-      setCurrentStep('loading');
-      
+      setCurrentStep("loading");
+
       try {
         const response = await apiClient.buildSchedule({
           school: school.trim(),
           major: major.trim(),
-          term: '2251', // Default term - could be made configurable
-          utterance: '', // No preferences for now
+          term: "2251", // Default term - could be made configurable
+          utterance: "", // No preferences for now
         });
-        
+
         onScheduleBuilt(response);
-        setCurrentStep('calendar');
+        setCurrentStep("calendar");
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to build schedule');
-        setCurrentStep('major'); // Go back to major step on error
+        setError(
+          err instanceof Error ? err.message : "Failed to build schedule"
+        );
+        setCurrentStep("major"); // Go back to major step on error
       }
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleContinue();
     }
   };
 
   const getPlaceholder = () => {
     switch (currentStep) {
-      case 'school':
-        return 'What college do you attend?';
-      case 'major':
-        return 'What is your major?';
+      case "school":
+        return "What college do you attend?";
+      case "major":
+        return "What is your major?";
       default:
-        return '';
+        return "";
     }
   };
 
   const getInputValue = () => {
     switch (currentStep) {
-      case 'school':
+      case "school":
         return school;
-      case 'major':
+      case "major":
         return major;
       default:
-        return '';
+        return "";
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (currentStep === 'school') {
+    if (currentStep === "school") {
       setSchool(value);
-    } else if (currentStep === 'major') {
+    } else if (currentStep === "major") {
       setMajor(value);
     }
   };
 
   const getButtonText = () => {
     switch (currentStep) {
-      case 'school':
-        return 'Continue';
-      case 'major':
-        return 'Build Schedule';
-      case 'loading':
-        return 'Building...';
+      case "school":
+        return "Continue";
+      case "major":
+        return "Build Schedule";
+      case "loading":
+        return "Building...";
       default:
-        return 'Continue';
+        return "Continue";
     }
   };
 
   const isButtonDisabled = () => {
-    return currentStep === 'loading' || 
-           (currentStep === 'school' && !school.trim()) ||
-           (currentStep === 'major' && !major.trim());
+    return (
+      currentStep === "loading" ||
+      (currentStep === "school" && !school.trim()) ||
+      (currentStep === "major" && !major.trim())
+    );
   };
 
-  if (currentStep === 'loading') {
+  const isInputDisabled = () => {
+    return currentStep === "loading";
+  };
+
+  if (currentStep === "loading") {
     return (
       <section className="mx-auto max-w-3xl min-h-[calc(100vh-8rem)] flex flex-col justify-center px-4 sm:px-6 py-16 sm:py-24">
         <div className="text-center space-y-4 sm:space-y-6">
@@ -122,7 +132,7 @@ export default function ScheduleBuilder({ onScheduleBuilt }: ScheduleBuilderProp
     );
   }
 
-  if (currentStep === 'calendar') {
+  if (currentStep === "calendar") {
     return null; // Calendar component will be rendered by parent
   }
 
@@ -149,10 +159,10 @@ export default function ScheduleBuilder({ onScheduleBuilt }: ScheduleBuilderProp
             value={getInputValue()}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            disabled={currentStep === 'loading'}
+            disabled={isInputDisabled()}
             className="w-full h-12 sm:h-14 rounded-2xl border border-black/[.12] dark:border-white/[.18] bg-white dark:bg-black/40 px-4 pr-28 text-base sm:text-lg outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           />
-          <button 
+          <button
             onClick={handleContinue}
             disabled={isButtonDisabled()}
             className="absolute right-2 top-1/2 -translate-y-1/2 h-9 sm:h-10 px-4 rounded-xl bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
@@ -160,7 +170,7 @@ export default function ScheduleBuilder({ onScheduleBuilt }: ScheduleBuilderProp
             {getButtonText()}
           </button>
         </div>
-        
+
         {error && (
           <div className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
@@ -170,4 +180,3 @@ export default function ScheduleBuilder({ onScheduleBuilt }: ScheduleBuilderProp
     </section>
   );
 }
-
