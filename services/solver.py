@@ -1,4 +1,4 @@
-from src.models.schemas import Section, Preferences, SchedulePlan, Prereq
+from models.schemas import Section, Preferences, SchedulePlan, Prereq
 from typing import List, Set
 import logging
 

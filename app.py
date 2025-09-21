@@ -98,8 +98,17 @@ def validate_course_codes(course_codes: List[str]) -> List[str]:
     """Validate and clean course codes."""
     validated = []
     for code in course_codes:
-        # Basic validation: should be alphanumeric and reasonable length
+        # Clean course code - handle formats like "PHYS 0475 - Introduction to Physics" or "CS0401"
         clean_code = code.strip().upper()
+        
+        # Extract just the course code part (before any dash or description)
+        if "-" in clean_code:
+            clean_code = clean_code.split("-")[0].strip()
+        
+        # Remove spaces to get format like "PHYS0475" or "CS0401"
+        clean_code = clean_code.replace(" ", "")
+        
+        # Basic validation: should be alphanumeric and reasonable length
         if clean_code and len(clean_code) >= 3 and len(clean_code) <= 10:
             validated.append(clean_code)
     return validated
@@ -169,10 +178,11 @@ async def build_schedule_endpoint(p: BuildPayload):
         
         # Add prerequisites - use AI or hardcoded based on environment variable
         prereqs = []
+        multi_semester_prereqs = []
         if not USE_AI_PREREQUISITES and p.school.lower() == "pitt" and p.major.lower() in ["computer science", "cs", "computer science major"]:
-            # Use hardcoded prerequisites for Pitt CS courses
+            # Use hardcoded prerequisites for Pitt CS courses - these are TRUE prerequisites (previous semesters)
             from src.models.schemas import Prereq
-            prereqs = [
+            multi_semester_prereqs = [
                 Prereq(course="CS1550", requires=["CS0449", "CS0447"]),
                 Prereq(course="CS1501", requires=["CS0441", "CS0445"]),
                 Prereq(course="CS0449", requires=["CS0441"]),
@@ -198,7 +208,11 @@ async def build_schedule_endpoint(p: BuildPayload):
         # Build initial schedule with prerequisites and available courses
         # For first semester, no completed courses yet
         completed_courses = []
-        plan = build_schedule(p.term, sections, preferences, prereqs, course_codes, [], completed_courses)
+        plan = build_schedule(p.term, sections, preferences, prereqs, course_codes, multi_semester_prereqs, completed_courses)
+        
+        # Merge prerequisites into requirements object
+        requirements.prereqs = prereqs
+        requirements.multiSemesterPrereqs = multi_semester_prereqs
         
         # Store session state with new storage backend
         storage = await get_session_storage()
@@ -209,7 +223,7 @@ async def build_schedule_endpoint(p: BuildPayload):
             "preferences": preferences.model_dump(),
             "courses": course_codes,
             "prereqs": [prereq.model_dump() for prereq in prereqs],
-            "multiSemesterPrereqs": [],
+            "multiSemesterPrereqs": [prereq.model_dump() for prereq in multi_semester_prereqs],
             "completedCourses": completed_courses,
             "last_plan": plan.model_dump()
         }
