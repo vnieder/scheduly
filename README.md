@@ -2,7 +2,7 @@
 
 ## Demo
 
-![Watch the demo](./Scheduly_demo.mp4)
+https://github.com/user-attachments/assets/3fb7f300-0e83-4594-9734-f226418a7cea
 
 ## Contributors
 Vincent Niedermayer - VMN16@pitt.edu
