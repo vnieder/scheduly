@@ -94,12 +94,118 @@ body {
 
 .glow-blob {
   position: absolute;
-  width: 48rem;
-  height: 48rem;
+  width: 40rem;
+  height: 40rem;
   border-radius: 9999px;
   filter: blur(80px);
   opacity: 0.35;
   mix-blend-mode: screen;
+}
+
+.glow-blob {
+  will-change: transform, opacity, filter;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes blob-move-a {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.35;
+    }
+    25% {
+      transform: translate(14px, -10px) scale(1.06);
+      opacity: 0.42;
+    }
+    50% {
+      transform: translate(0, -18px) scale(0.98);
+      opacity: 0.32;
+    }
+    75% {
+      transform: translate(-12px, 8px) scale(1.04);
+      opacity: 0.4;
+    }
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.35;
+    }
+  }
+
+  @keyframes blob-move-b {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.35;
+    }
+    20% {
+      transform: translate(-10px, 12px) scale(1.05);
+      opacity: 0.41;
+    }
+    50% {
+      transform: translate(-18px, 0) scale(0.97);
+      opacity: 0.3;
+    }
+    80% {
+      transform: translate(10px, -10px) scale(1.05);
+      opacity: 0.4;
+    }
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.35;
+    }
+  }
+
+  @keyframes blob-move-c {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.32;
+    }
+    33% {
+      transform: translate(16px, 8px) scale(1.07);
+      opacity: 0.4;
+    }
+    66% {
+      transform: translate(-8px, 14px) scale(0.99);
+      opacity: 0.33;
+    }
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.32;
+    }
+  }
+
+  @keyframes blob-move-d {
+    0% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.34;
+    }
+    25% {
+      transform: translate(-8px, -12px) scale(1.06);
+      opacity: 0.42;
+    }
+    50% {
+      transform: translate(10px, 10px) scale(0.98);
+      opacity: 0.31;
+    }
+    75% {
+      transform: translate(-12px, 6px) scale(1.04);
+      opacity: 0.39;
+    }
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.34;
+    }
+  }
+
+  @keyframes blob-pulse-filter {
+    0% {
+      filter: blur(80px) brightness(1) saturate(1);
+    }
+    50% {
+      filter: blur(86px) brightness(1.18) saturate(1.1);
+    }
+    100% {
+      filter: blur(80px) brightness(1) saturate(1);
+    }
+  }
 }
 
 .glow-blob--cyan {
@@ -116,4 +222,23 @@ body {
 
 .glow-blob--pink {
   background: radial-gradient(closest-side, #ec4899, transparent 70%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .glow-blob--cyan {
+    animation: blob-move-a 20s ease-in-out infinite alternate,
+      blob-pulse-filter 6s ease-in-out infinite alternate;
+  }
+  .glow-blob--violet {
+    animation: blob-move-b 22s cubic-bezier(0.22, 1, 0.36, 1) infinite alternate,
+      blob-pulse-filter 7s ease-in-out infinite alternate;
+  }
+  .glow-blob--orange {
+    animation: blob-move-c 19s ease-in-out infinite alternate,
+      blob-pulse-filter 5.5s ease-in-out infinite alternate;
+  }
+  .glow-blob--pink {
+    animation: blob-move-d 24s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate,
+      blob-pulse-filter 6.5s ease-in-out infinite alternate;
+  }
 }

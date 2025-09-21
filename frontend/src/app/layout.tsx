@@ -33,19 +33,19 @@ export default function RootLayout({
           <div className="bg-grid-soft" />
           <div
             className="glow-blob glow-blob--cyan"
-            style={{ top: "-10%", left: "-10%" }}
+            style={{ top: "-12%", left: "-8%" }}
           />
           <div
             className="glow-blob glow-blob--violet"
-            style={{ bottom: "-15%", right: "-10%" }}
+            style={{ bottom: "-12%", right: "-12%" }}
           />
           <div
             className="glow-blob glow-blob--orange"
-            style={{ top: "20%", right: "20%" }}
+            style={{ top: "18%", right: "18%" }}
           />
           <div
             className="glow-blob glow-blob--pink"
-            style={{ bottom: "10%", left: "15%" }}
+            style={{ bottom: "12%", left: "12%" }}
           />
         </div>
         <header className="fixed top-0 inset-x-0 z-50 border-b border-black/[.08] dark:border-white/[.12] bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60">
