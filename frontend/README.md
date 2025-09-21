@@ -41,7 +41,7 @@ npm start
 - Set environment variable `NEXT_PUBLIC_API_URL` to your Railway backend URL.
 - Default build command `npm run build` is supported.
 
-### Backend API (used by the app)
+### Backend API
 
 - `GET /health` — check mode and features
 - `POST /build` — create initial schedule, returns `session_id` and `plan`
