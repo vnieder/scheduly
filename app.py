@@ -36,6 +36,11 @@ MAX_COURSE_SELECTION = int(os.getenv("MAX_COURSE_SELECTION", "10"))
 SESSION_TIMEOUT_HOURS = int(os.getenv("SESSION_TIMEOUT_HOURS", "24"))
 USE_AI_PREREQUISITES = os.getenv("USE_AI_PREREQUISITES", "false").lower() == "true"
 
+# Dual mode configuration
+APP_MODE = os.getenv("APP_MODE", "development").lower()  # "development" or "production"
+DEVELOPMENT_MODE = APP_MODE == "development"
+PRODUCTION_MODE = APP_MODE == "production"
+
 # Session storage using new backend system
 from src.services.storage.session_manager import session_manager, get_session_storage
 from src.services.storage.session_storage import SessionStorage, SessionNotFoundError as StorageSessionNotFoundError
@@ -67,7 +72,10 @@ class InvalidTermError(HTTPException):
 
 class InvalidSchoolError(HTTPException):
     def __init__(self, school: str):
-        super().__init__(status_code=400, detail=f"School '{school}' not supported. Currently only supports: {DEFAULT_SCHOOL}")
+        if DEVELOPMENT_MODE:
+            super().__init__(status_code=400, detail=f"School '{school}' not supported in development mode. Currently only supports: {DEFAULT_SCHOOL}. Set APP_MODE=production for multi-university support.")
+        else:
+            super().__init__(status_code=400, detail=f"School '{school}' not supported. Please check the school name and try again.")
 
 class AIServiceError(HTTPException):
     def __init__(self, service: str, error: str):
@@ -92,7 +100,12 @@ def validate_term(term: str) -> bool:
 
 def validate_school(school: str) -> bool:
     """Validate school is supported."""
-    return school.lower() == DEFAULT_SCHOOL.lower()
+    if DEVELOPMENT_MODE:
+        # In development mode, only support Pitt for hardcoded data
+        return school.lower() == DEFAULT_SCHOOL.lower()
+    else:
+        # In production mode, support any school (AI will handle requirements)
+        return True
 
 def validate_course_codes(course_codes: List[str]) -> List[str]:
     """Validate and clean course codes."""
@@ -115,7 +128,19 @@ def validate_course_codes(course_codes: List[str]) -> List[str]:
 
 @app.get("/health")
 def health_check():
-    return {"ok": True}
+    return {
+        "ok": True,
+        "mode": APP_MODE,
+        "development_mode": DEVELOPMENT_MODE,
+        "production_mode": PRODUCTION_MODE,
+        "supported_schools": ["Pitt"] if DEVELOPMENT_MODE else ["Any university (AI-powered)"],
+        "features": {
+            "hardcoded_requirements": DEVELOPMENT_MODE,
+            "ai_requirements": PRODUCTION_MODE,
+            "ai_prerequisites": PRODUCTION_MODE,
+            "multi_university": PRODUCTION_MODE
+        }
+    }
 
 @app.post("/build")
 async def build_schedule_endpoint(p: BuildPayload):
@@ -135,9 +160,14 @@ async def build_schedule_endpoint(p: BuildPayload):
         
         logger.info(f"Building schedule for {p.school} {p.major} term {p.term}")
         
-        # Get requirements (now includes hardcoded fallback for Pitt CS)
+        # Get requirements based on mode
         try:
-            requirements = get_requirements(p.school, p.major)
+            if DEVELOPMENT_MODE:
+                logger.info(f"Development mode: Using hardcoded requirements for {p.school} {p.major}")
+                requirements = get_requirements(p.school, p.major)
+            else:
+                logger.info(f"Production mode: Using AI-generated requirements for {p.school} {p.major}")
+                requirements = get_requirements(p.school, p.major)
         except Exception as e:
             logger.error(f"Failed to get requirements: {e}")
             raise AIServiceError("Requirements", str(e))
@@ -168,42 +198,59 @@ async def build_schedule_endpoint(p: BuildPayload):
             logger.error(f"Failed to get sections: {e}")
             raise CatalogServiceError(str(e))
         
-        # Parse preferences
+        # Parse preferences based on mode
         try:
-            prefs_data = parse_preferences(p.utterance) if p.utterance else {}
-            preferences = Preferences(**prefs_data)
+            if DEVELOPMENT_MODE and not p.utterance:
+                # In development mode, use default preferences if no utterance
+                preferences = Preferences()
+                logger.info("Development mode: Using default preferences")
+            else:
+                # Use AI to parse preferences (both modes support this)
+                prefs_data = parse_preferences(p.utterance) if p.utterance else {}
+                preferences = Preferences(**prefs_data)
+                logger.info(f"Parsed preferences: {prefs_data}")
         except Exception as e:
             logger.error(f"Failed to parse preferences: {e}")
-            raise AIServiceError("Gemini", str(e))
+            if DEVELOPMENT_MODE:
+                # In development mode, fall back to default preferences
+                preferences = Preferences()
+                logger.warning("Development mode: Falling back to default preferences")
+            else:
+                raise AIServiceError("Gemini", str(e))
         
-        # Add prerequisites - use AI or hardcoded based on environment variable
+        # Add prerequisites based on mode
         prereqs = []
         multi_semester_prereqs = []
-        if not USE_AI_PREREQUISITES and p.school.lower() == "pitt" and p.major.lower() in ["computer science", "cs", "computer science major"]:
-            # Use hardcoded prerequisites for Pitt CS courses - these are TRUE prerequisites (previous semesters)
-            from src.models.schemas import Prereq
-            multi_semester_prereqs = [
-                Prereq(course="CS1550", requires=["CS0449", "CS0447"]),
-                Prereq(course="CS1501", requires=["CS0441", "CS0445"]),
-                Prereq(course="CS0449", requires=["CS0441"]),
-                Prereq(course="CS0447", requires=["CS0441"]),
-                Prereq(course="CS0445", requires=["CS0441"]),
-            ]
-            logger.info("Using hardcoded prerequisites for Pitt CS")
-        elif USE_AI_PREREQUISITES:
-            # Use AI to search for prerequisites
+        
+        if DEVELOPMENT_MODE:
+            # Development mode: Use hardcoded prerequisites for Pitt CS
+            if p.school.lower() == "pitt" and p.major.lower() in ["computer science", "cs", "computer science major"]:
+                from src.models.schemas import Prereq
+                multi_semester_prereqs = [
+                    Prereq(course="CS1550", requires=["CS0449", "CS0447"]),
+                    Prereq(course="CS1501", requires=["CS0441", "CS0445"]),
+                    Prereq(course="CS0449", requires=["CS0441"]),
+                    Prereq(course="CS0447", requires=["CS0441"]),
+                    Prereq(course="CS0445", requires=["CS0441"]),
+                ]
+                logger.info("Development mode: Using hardcoded prerequisites for Pitt CS")
+            else:
+                logger.info("Development mode: No hardcoded prerequisites available for this school/major")
+        else:
+            # Production mode: Use AI to search for prerequisites
             try:
                 from src.agents.gemini import get_requirements_with_prereqs
                 requirements_data = get_requirements_with_prereqs(p.school, p.major)
                 prereqs_data = requirements_data.get("prereqs", [])
+                multi_semester_prereqs_data = requirements_data.get("multiSemesterPrereqs", [])
                 from src.models.schemas import Prereq
                 prereqs = [Prereq(**p) for p in prereqs_data]
-                logger.info("Using AI-searched prerequisites")
+                multi_semester_prereqs = [Prereq(**p) for p in multi_semester_prereqs_data]
+                logger.info("Production mode: Using AI-searched prerequisites")
             except Exception as e:
                 logger.warning(f"AI prerequisite search failed, using empty prerequisites: {e}")
                 prereqs = []
-        else:
-            logger.info("No prerequisites configured")
+                multi_semester_prereqs = []
         
         # Build initial schedule with prerequisites and available courses
         # For first semester, no completed courses yet

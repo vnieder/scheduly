@@ -4,6 +4,7 @@ A backend service for building class schedules based on degree requirements and 
 
 ## Features
 
+- **Dual Mode System**: Choose between development (hardcoded) and production (AI-powered) modes
 - **Smart Schedule Building**: Automatically builds class schedules from degree requirements
 - **Preference Parsing**: Uses Gemini AI to parse natural language preferences into structured constraints
 - **Live Course Data**: Fetches real-time course sections from Pitt's PeopleSoft system
@@ -12,6 +13,22 @@ A backend service for building class schedules based on degree requirements and 
 - **Caching**: In-memory caching for improved performance
 - **Error Handling**: Robust error handling with retry logic and fallback to mock data
 
+## Dual Mode System
+
+The backend supports two distinct modes:
+
+### Development Mode (`APP_MODE=development`)
+- **Fast & Reliable**: Uses hardcoded Pitt CS data
+- **No Rate Limits**: No AI API calls for requirements/prerequisites
+- **Frontend-Friendly**: Perfect for frontend development and testing
+- **Pitt Only**: Only supports University of Pittsburgh
+
+### Production Mode (`APP_MODE=production`)
+- **Fully Agentic**: AI-generated requirements for any university
+- **Multi-University**: Supports any school with AI-powered course discovery
+- **Dynamic**: Real-time prerequisite and requirement discovery
+- **AI-Powered**: Full Gemini AI integration for all features
+
 ## Quick Start
 
 1. **Install dependencies**:
@@ -19,7 +36,20 @@ A backend service for building class schedules based on degree requirements and 
    pip install -r requirements.txt
    ```
 
-2. **Set up environment**:
+2. **Choose your mode**:
+   
+   **For Frontend Development (Fast, No AI calls)**:
+   ```bash
+   python scripts/switch_mode.py dev
+   ```
+   
+   **For Production (AI-powered, Multi-university)**:
+   ```bash
+   python scripts/switch_mode.py prod
+   # Make sure to set GEMINI_API_KEY in your .env file
+   ```
+
+3. **Set up environment**:
    Use the interactive setup script:
    ```bash
    python scripts/setup_env.py
@@ -27,28 +57,49 @@ A backend service for building class schedules based on degree requirements and 
    
    Or manually create a `.env` file with your configuration:
    ```
-   GEMINI_API_KEY=your_gemini_api_key_here
+   APP_MODE=development  # or "production"
+   GEMINI_API_KEY=your_gemini_api_key_here  # Required for production mode
    REDIS_URL=redis://localhost:6379/0
    # or
    DATABASE_URL=postgresql+asyncpg://user:pass@host:port/db
    ```
 
-3. **Run the server**:
+4. **Run the server**:
    ```bash
    uvicorn app:app --reload --port 8000
    ```
 
-4. **Test the API**:
+5. **Test the API**:
    ```bash
    python scripts/test_backend.py
+   ```
+
+6. **Check current mode**:
+   ```bash
+   curl http://localhost:8000/health
    ```
 
 ## API Endpoints
 
 ### `GET /health`
-Health check endpoint.
+Health check endpoint with mode information.
 
-**Response**: `{"ok": true}`
+**Response**:
+```json
+{
+  "ok": true,
+  "mode": "development",
+  "development_mode": true,
+  "production_mode": false,
+  "supported_schools": ["Pitt"],
+  "features": {
+    "hardcoded_requirements": true,
+    "ai_requirements": false,
+    "ai_prerequisites": false,
+    "multi_university": false
+  }
+}
+```
 
 ### `POST /build`
 Build an initial schedule for a student.

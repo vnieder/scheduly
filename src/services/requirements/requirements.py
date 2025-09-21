@@ -7,8 +7,13 @@ logger = logging.getLogger(__name__)
 def get_requirements(school: str, major: str) -> RequirementSet:
     """Dynamically fetch degree requirements using web search and AI parsing."""
     
-    # Hardcoded fallback for Pitt Computer Science
-    if school.lower() == "pitt" and major.lower() in ["computer science", "cs", "computer science major"]:
+    # Check if we're in development mode
+    import os
+    APP_MODE = os.getenv("APP_MODE", "development").lower()
+    DEVELOPMENT_MODE = APP_MODE == "development"
+    
+    # Hardcoded fallback for Pitt Computer Science (development mode only)
+    if DEVELOPMENT_MODE and school.lower() == "pitt" and major.lower() in ["computer science", "cs", "computer science major"]:
         logger.info(f"Using hardcoded requirements for Pitt {major}")
         return RequirementSet(
             catalogYear="2024-2025",
@@ -75,6 +80,9 @@ def get_requirements(school: str, major: str) -> RequirementSet:
             minCredits=12,
             maxCredits=18
         )
+    
+    # Production mode or non-Pitt CS: Use AI to fetch requirements
+    logger.info(f"Using AI to fetch requirements for {school} {major}")
     
     # Create a comprehensive prompt for finding all degree requirements
     prompt = f"""Find the complete official degree requirements for {school} {major} program.
