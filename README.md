@@ -4,6 +4,8 @@ Build your dream schedule
 
 ## Demo
 
+https://github.com/vnieder/scheduly/blob/main/Scheduly_demo.mp4
+
 [Watch the demo](./Scheduly_demo.mp4)
 
 ## Contributors
