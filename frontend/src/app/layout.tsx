@@ -46,8 +46,8 @@ export default function RootLayout({
               <Image
                 src="/scheduly.svg"
                 alt="Scheduly"
-                width={32}
-                height={32}
+                width={36}
+                height={36}
               />
               Scheduly
             </Link>
