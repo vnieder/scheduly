@@ -1,10 +1,8 @@
-# Scheduly Repo
-
-Build your dream schedule
+# Scheduly 
 
 ## Demo
 
-https://github.com/vnieder/scheduly/blob/main/Scheduly_demo.mp4
+<video src="https://github.com/vnieder/scheduly/raw/main/Scheduly_demo.mp4" controls width="600"></video>
 
 [Watch the demo](./Scheduly_demo.mp4)
 
