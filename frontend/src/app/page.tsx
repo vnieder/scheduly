@@ -1,31 +1,27 @@
-export default function Home() {
-  return (
-    <section className="mx-auto max-w-3xl min-h-[calc(100vh-8rem)] flex flex-col justify-center px-4 sm:px-6 py-16 sm:py-24">
-      <div className="text-center space-y-4 sm:space-y-6">
-        <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight font-camera">
-          Build your dream schedule
-        </h1>
-        <p className="text-base sm:text-xl text-black/60 dark:text-white/60">
-          The easiest way to build schedules that fit into your life.
-        </p>
-      </div>
+'use client';
 
-      <div className="mt-8 sm:mt-10">
-        <label htmlFor="school" className="sr-only">
-          What college do you attend?
-        </label>
-        <div className="relative">
-          <input
-            id="school"
-            type="text"
-            placeholder="What college do you attend?"
-            className="w-full h-12 sm:h-14 rounded-2xl border border-black/[.12] dark:border-white/[.18] bg-white dark:bg-black/40 px-4 pr-28 text-base sm:text-lg outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 shadow-sm"
-          />
-          <button className="absolute right-2 top-1/2 -translate-y-1/2 h-9 sm:h-10 px-4 rounded-xl bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity">
-            Continue
-          </button>
-        </div>
-      </div>
-    </section>
-  );
+import { useState } from 'react';
+import ScheduleBuilder from '@/components/ScheduleBuilder';
+import ScheduleCalendar from '@/components/ScheduleCalendar';
+import { BuildScheduleResponse } from '@/lib/api';
+
+export default function Home() {
+  const [scheduleData, setScheduleData] = useState<BuildScheduleResponse | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const handleScheduleBuilt = (data: BuildScheduleResponse) => {
+    setScheduleData(data);
+    setShowCalendar(true);
+  };
+
+  const handleBackToBuilder = () => {
+    setShowCalendar(false);
+    setScheduleData(null);
+  };
+
+  if (showCalendar && scheduleData) {
+    return <ScheduleCalendar scheduleData={scheduleData} onBack={handleBackToBuilder} />;
+  }
+
+  return <ScheduleBuilder onScheduleBuilt={handleScheduleBuilt} />;
 }

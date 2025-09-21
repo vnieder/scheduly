@@ -1,0 +1,97 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+export interface BuildScheduleRequest {
+  school: string;
+  major: string;
+  term?: string;
+  utterance?: string;
+}
+
+export interface BuildScheduleResponse {
+  session_id: string;
+  requirements: any;
+  plan: any;
+}
+
+export interface OptimizeScheduleRequest {
+  session_id: string;
+  utterance: string;
+}
+
+export interface OptimizeScheduleResponse {
+  plan: any;
+}
+
+export interface HealthCheckResponse {
+  ok: boolean;
+  mode: string;
+  development_mode: boolean;
+  production_mode: boolean;
+  supported_schools: string[];
+  features: {
+    hardcoded_requirements: boolean;
+    ai_requirements: boolean;
+    ai_prerequisites: boolean;
+    multi_university: boolean;
+  };
+}
+
+class ApiClient {
+  private baseUrl: string;
+
+  constructor(baseUrl: string = API_BASE_URL) {
+    this.baseUrl = baseUrl;
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`;
+    
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error occurred');
+    }
+  }
+
+  async healthCheck(): Promise<HealthCheckResponse> {
+    return this.request<HealthCheckResponse>('/health');
+  }
+
+  async buildSchedule(data: BuildScheduleRequest): Promise<BuildScheduleResponse> {
+    return this.request<BuildScheduleResponse>('/build', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async optimizeSchedule(data: OptimizeScheduleRequest): Promise<OptimizeScheduleResponse> {
+    return this.request<OptimizeScheduleResponse>('/optimize', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+}
+
+export const apiClient = new ApiClient();
+
