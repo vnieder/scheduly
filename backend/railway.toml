@@ -9,3 +9,4 @@ restartPolicyType = "on_failure"
 
 [env]
 PORT = "8000"
+PYTHON_VERSION = "3.9.18"
