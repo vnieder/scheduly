@@ -77,7 +77,21 @@ uvicorn app:app --reload --port 8000
 
 ## Migration from Legacy System
 
-The old `USE_AI_PREREQUISITES` flag is now deprecated. Use `APP_MODE` instead:
+The old `USE_AI_PREREQUISITES` flag is now deprecated but still supported for backward compatibility:
 
 - `USE_AI_PREREQUISITES=false` → `APP_MODE=development`
 - `USE_AI_PREREQUISITES=true` → `APP_MODE=production`
+
+**Legacy Support:**
+- If `USE_AI_PREREQUISITES` is set, it will override `APP_MODE`
+- You'll see deprecation warnings in the logs
+- Use `python scripts/switch_mode.py` to migrate to the new system
+
+**Recommended Migration:**
+```bash
+# Check current mode
+python scripts/switch_mode.py status
+
+# Switch to new system (removes legacy variable)
+python scripts/switch_mode.py dev   # or prod
+```

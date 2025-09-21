@@ -34,12 +34,23 @@ DEFAULT_SCHOOL = os.getenv("DEFAULT_SCHOOL", "Pitt")
 MAX_COURSES_PER_SEMESTER = int(os.getenv("MAX_COURSES_PER_SEMESTER", "6"))
 MAX_COURSE_SELECTION = int(os.getenv("MAX_COURSE_SELECTION", "10"))
 SESSION_TIMEOUT_HOURS = int(os.getenv("SESSION_TIMEOUT_HOURS", "24"))
-USE_AI_PREREQUISITES = os.getenv("USE_AI_PREREQUISITES", "false").lower() == "true"
-
 # Dual mode configuration
 APP_MODE = os.getenv("APP_MODE", "development").lower()  # "development" or "production"
 DEVELOPMENT_MODE = APP_MODE == "development"
 PRODUCTION_MODE = APP_MODE == "production"
+
+# Legacy support: If USE_AI_PREREQUISITES is set, override APP_MODE
+LEGACY_USE_AI_PREREQUISITES = os.getenv("USE_AI_PREREQUISITES", "").lower()
+if LEGACY_USE_AI_PREREQUISITES == "true":
+    APP_MODE = "production"
+    DEVELOPMENT_MODE = False
+    PRODUCTION_MODE = True
+    logger.warning("USE_AI_PREREQUISITES=true detected. This is deprecated. Use APP_MODE=production instead.")
+elif LEGACY_USE_AI_PREREQUISITES == "false":
+    APP_MODE = "development"
+    DEVELOPMENT_MODE = True
+    PRODUCTION_MODE = False
+    logger.warning("USE_AI_PREREQUISITES=false detected. This is deprecated. Use APP_MODE=development instead.")
 
 # Session storage using new backend system
 from src.services.storage.session_manager import session_manager, get_session_storage
@@ -133,6 +144,7 @@ def health_check():
         "mode": APP_MODE,
         "development_mode": DEVELOPMENT_MODE,
         "production_mode": PRODUCTION_MODE,
+        "legacy_mode": LEGACY_USE_AI_PREREQUISITES != "",
         "supported_schools": ["Pitt"] if DEVELOPMENT_MODE else ["Any university (AI-powered)"],
         "features": {
             "hardcoded_requirements": DEVELOPMENT_MODE,

@@ -49,6 +49,9 @@ def switch_to_development():
     """Switch to development mode."""
     env_vars = read_env_file()
     env_vars['APP_MODE'] = 'development'
+    # Remove legacy variable if it exists
+    if 'USE_AI_PREREQUISITES' in env_vars:
+        del env_vars['USE_AI_PREREQUISITES']
     write_env_file(env_vars)
     print("✅ Switched to DEVELOPMENT mode")
     print("   - Uses hardcoded Pitt CS data")
@@ -60,6 +63,9 @@ def switch_to_production():
     """Switch to production mode."""
     env_vars = read_env_file()
     env_vars['APP_MODE'] = 'production'
+    # Remove legacy variable if it exists
+    if 'USE_AI_PREREQUISITES' in env_vars:
+        del env_vars['USE_AI_PREREQUISITES']
     
     # Check if GEMINI_API_KEY is set
     if 'GEMINI_API_KEY' not in env_vars or not env_vars['GEMINI_API_KEY']:
@@ -77,8 +83,13 @@ def show_current_mode():
     """Show the current mode."""
     env_vars = read_env_file()
     current_mode = env_vars.get('APP_MODE', 'development')
+    legacy_mode = env_vars.get('USE_AI_PREREQUISITES', '')
     
     print(f"Current mode: {current_mode.upper()}")
+    
+    if legacy_mode:
+        print(f"⚠️  Legacy mode detected: USE_AI_PREREQUISITES={legacy_mode}")
+        print("   This is deprecated. Use APP_MODE instead.")
     
     if current_mode == 'development':
         print("   - Uses hardcoded Pitt CS data")
