@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import BackgroundFX from "./BackgroundFX";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,26 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <div className="fixed inset-0 -z-10 overflow-hidden">
+          <BackgroundFX />
+          <div className="bg-grid-soft" />
+          <div
+            className="glow-blob glow-blob--cyan"
+            style={{ top: "-10%", left: "-10%" }}
+          />
+          <div
+            className="glow-blob glow-blob--violet"
+            style={{ bottom: "-15%", right: "-10%" }}
+          />
+          <div
+            className="glow-blob glow-blob--orange"
+            style={{ top: "20%", right: "20%" }}
+          />
+          <div
+            className="glow-blob glow-blob--pink"
+            style={{ bottom: "10%", left: "15%" }}
+          />
+        </div>
         <header className="fixed top-0 inset-x-0 z-50 border-b border-black/[.08] dark:border-white/[.12] bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="text-lg font-semibold tracking-tight">Scheduly</div>
