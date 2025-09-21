@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { User } from "@auth0/nextjs-auth0/client";
 import { apiClient, BuildScheduleResponse } from "@/lib/api";
 
 type FormStep = "school" | "major" | "loading" | "calendar";
@@ -9,7 +10,7 @@ type FormStep = "school" | "major" | "loading" | "calendar";
 interface ScheduleBuilderProps {
   onScheduleBuilt: (data: BuildScheduleResponse) => void;
   onAuthRequired: () => void;
-  user: any;
+  user: User | undefined;
   isLoading: boolean;
 }
 

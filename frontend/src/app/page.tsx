@@ -26,7 +26,7 @@ export default function Home() {
 
   useEffect(() => {
     checkAuthRequirement();
-  }, [user, isLoading, requiresAuth, router]);
+  }, [user, isLoading, requiresAuth, router, checkAuthRequirement]);
 
   const handleScheduleBuilt = (data: BuildScheduleResponse) => {
     setScheduleData(data);
