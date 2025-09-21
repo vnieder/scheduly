@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { apiClient, BuildScheduleResponse } from "@/lib/api";
 
 type FormStep = "school" | "major" | "loading" | "calendar";
@@ -138,21 +139,41 @@ export default function ScheduleBuilder({
 
   return (
     <section className="mx-auto max-w-3xl min-h-[calc(100vh-8rem)] flex flex-col justify-center px-4 sm:px-6 py-16 sm:py-24">
-      <div className="text-center space-y-4 sm:space-y-6">
-        <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight font-camera">
+      <motion.div
+        className="text-center space-y-4 sm:space-y-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <motion.h1
+          className="text-3xl sm:text-5xl font-semibold tracking-tight font-camera"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+        >
           Build your dream schedule
-        </h1>
-        <p className="text-base sm:text-xl text-black/60 dark:text-white/60">
+        </motion.h1>
+        <motion.p
+          className="text-base sm:text-xl text-black/60 dark:text-white/60"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+        >
           The easiest way to build schedules that fit into your life.
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
 
-      <div className="mt-8 sm:mt-10">
+      <motion.div
+        className="mt-8 sm:mt-10"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
+      >
         <label htmlFor="input" className="sr-only">
           {getPlaceholder()}
         </label>
         <div className="relative">
-          <input
+          <motion.input
             id="input"
             type="text"
             placeholder={getPlaceholder()}
@@ -161,22 +182,33 @@ export default function ScheduleBuilder({
             onKeyPress={handleKeyPress}
             disabled={isInputDisabled()}
             className="w-full h-12 sm:h-14 rounded-2xl border border-black/[.12] dark:border-white/[.18] bg-white dark:bg-black/40 px-4 pr-28 text-base sm:text-lg outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            whileFocus={{ scale: 1.02 }}
+            transition={{ duration: 0.2 }}
           />
-          <button
+          <motion.button
             onClick={handleContinue}
             disabled={isButtonDisabled()}
             className="absolute right-2 top-1/2 -translate-y-1/2 h-9 sm:h-10 px-4 rounded-xl bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.2 }}
           >
             {getButtonText()}
-          </button>
+          </motion.button>
         </div>
 
         {error && (
-          <div className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <motion.div
+            className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </section>
   );
 }
