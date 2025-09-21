@@ -21,11 +21,11 @@ class SessionStorageType(Enum):
 class SessionData:
     """Session data model with validation."""
     
-    def __init__(self, session_id: str, data: Dict, created_at: datetime = None):
+    def __init__(self, session_id: str, data: Dict, created_at: datetime = None, last_accessed: datetime = None):
         self.session_id = session_id
         self.data = data
         self.created_at = created_at or datetime.now()
-        self.last_accessed = datetime.now()
+        self.last_accessed = last_accessed or datetime.now()
     
     def is_expired(self, timeout_hours: int) -> bool:
         """Check if session is expired."""

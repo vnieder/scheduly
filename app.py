@@ -34,6 +34,7 @@ DEFAULT_SCHOOL = os.getenv("DEFAULT_SCHOOL", "Pitt")
 MAX_COURSES_PER_SEMESTER = int(os.getenv("MAX_COURSES_PER_SEMESTER", "6"))
 MAX_COURSE_SELECTION = int(os.getenv("MAX_COURSE_SELECTION", "10"))
 SESSION_TIMEOUT_HOURS = int(os.getenv("SESSION_TIMEOUT_HOURS", "24"))
+USE_AI_PREREQUISITES = os.getenv("USE_AI_PREREQUISITES", "false").lower() == "true"
 
 # Session storage using new backend system
 from services.session_manager import session_manager, get_session_storage
@@ -125,13 +126,12 @@ async def build_schedule_endpoint(p: BuildPayload):
         
         logger.info(f"Building schedule for {p.school} {p.major} term {p.term}")
         
-        # Get requirements with prerequisites using agentic search
+        # Get requirements (now includes hardcoded fallback for Pitt CS)
         try:
-            requirements_data = get_requirements_with_prereqs(p.school, p.major)
-            requirements = RequirementSet(**requirements_data)
+            requirements = get_requirements(p.school, p.major)
         except Exception as e:
             logger.error(f"Failed to get requirements: {e}")
-            raise AIServiceError("Gemini", str(e))
+            raise AIServiceError("Requirements", str(e))
         
         # Choose courses for the term - mix of major requirements and gen eds
         all_courses = requirements.required.copy()
@@ -167,10 +167,38 @@ async def build_schedule_endpoint(p: BuildPayload):
             logger.error(f"Failed to parse preferences: {e}")
             raise AIServiceError("Gemini", str(e))
         
+        # Add prerequisites - use AI or hardcoded based on environment variable
+        prereqs = []
+        if not USE_AI_PREREQUISITES and p.school.lower() == "pitt" and p.major.lower() in ["computer science", "cs", "computer science major"]:
+            # Use hardcoded prerequisites for Pitt CS courses
+            from models.schemas import Prereq
+            prereqs = [
+                Prereq(course="CS1550", requires=["CS0449", "CS0447"]),
+                Prereq(course="CS1501", requires=["CS0441", "CS0445"]),
+                Prereq(course="CS0449", requires=["CS0441"]),
+                Prereq(course="CS0447", requires=["CS0441"]),
+                Prereq(course="CS0445", requires=["CS0441"]),
+            ]
+            logger.info("Using hardcoded prerequisites for Pitt CS")
+        elif USE_AI_PREREQUISITES:
+            # Use AI to search for prerequisites
+            try:
+                from agents.gemini import get_requirements_with_prereqs
+                requirements_data = get_requirements_with_prereqs(p.school, p.major)
+                prereqs_data = requirements_data.get("prereqs", [])
+                from models.schemas import Prereq
+                prereqs = [Prereq(**p) for p in prereqs_data]
+                logger.info("Using AI-searched prerequisites")
+            except Exception as e:
+                logger.warning(f"AI prerequisite search failed, using empty prerequisites: {e}")
+                prereqs = []
+        else:
+            logger.info("No prerequisites configured")
+        
         # Build initial schedule with prerequisites and available courses
         # For first semester, no completed courses yet
         completed_courses = []
-        plan = build_schedule(p.term, sections, preferences, requirements.prereqs, course_codes, requirements.multiSemesterPrereqs, completed_courses)
+        plan = build_schedule(p.term, sections, preferences, prereqs, course_codes, [], completed_courses)
         
         # Store session state with new storage backend
         storage = await get_session_storage()
@@ -180,8 +208,8 @@ async def build_schedule_endpoint(p: BuildPayload):
             "term": p.term,
             "preferences": preferences.model_dump(),
             "courses": course_codes,
-            "prereqs": [prereq.model_dump() for prereq in requirements.prereqs],
-            "multiSemesterPrereqs": [prereq.model_dump() for prereq in requirements.multiSemesterPrereqs],
+            "prereqs": [prereq.model_dump() for prereq in prereqs],
+            "multiSemesterPrereqs": [],
             "completedCourses": completed_courses,
             "last_plan": plan.model_dump()
         }

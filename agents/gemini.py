@@ -92,11 +92,30 @@ def search_course_prerequisites(course_code: str, school: str = "University of P
             logger.info(f"Using cached prerequisites for {course_code}")
             return cached_data
     
+    # Known prerequisites for common Pitt CS courses (fallback)
+    known_prereqs = {
+        "CS1550": ["CS0449", "CS0447"],
+        "CS1501": ["CS0441", "CS0445"],
+        "CS0449": ["CS0441"],
+        "CS0447": ["CS0441"],
+        "CS0445": ["CS0441"],
+        "CS0441": [],
+        "CS0401": [],
+    }
+    
+    if course_code in known_prereqs:
+        prereqs = known_prereqs[course_code]
+        _prereq_cache[cache_key] = (prereqs, current_time)
+        logger.info(f"Using known prerequisites for {course_code}: {prereqs}")
+        return prereqs
+    
     try:
         # Use Gemini with web search to find prerequisites
         prompt = f"""Find the prerequisites for {course_code} at {school}. 
 
 Search the official course catalog, academic bulletin, or department website for {school}.
+
+IMPORTANT: Search specifically on the University of Pittsburgh website (pitt.edu) for course {course_code}.
 
 Look for:
 1. Prerequisite courses required before taking {course_code}
@@ -107,14 +126,15 @@ Return ONLY a JSON array of course codes that are prerequisites for {course_code
 If no prerequisites are found, return an empty array [].
 
 Examples of what to look for:
-- "Prerequisites: CS0401, MATH0220"
+- "Prerequisites: CS0449, CS0447"
 - "Must have completed CS0445"
 - "Corequisite: MATH0230"
+- "Prerequisite: CS0449 and CS0447"
 
 Course code: {course_code}
 School: {school}
 
-Return format: ["CS0401", "MATH0220"] or []"""
+Return format: ["CS0449", "CS0447"] or []"""
         
         resp = client.models.generate_content(
             model=MODEL,

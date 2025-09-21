@@ -64,13 +64,20 @@ class RedisSessionStorage(SessionStorage):
             
             self._client = redis.Redis(connection_pool=self.pool)
             
-            # Test connection
-            try:
-                await self._client.ping()
-                logger.info(f"Connected to Redis at {self.host}:{self.port}")
-            except Exception as e:
-                logger.error(f"Failed to connect to Redis: {e}")
-                raise SessionStorageError(f"Redis connection failed: {e}")
+            # Test connection with retry
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    await self._client.ping()
+                    logger.info(f"Connected to Redis at {self.host}:{self.port}")
+                    break
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        logger.error(f"Failed to connect to Redis after {max_retries} attempts: {e}")
+                        raise SessionStorageError(f"Redis connection failed: {e}")
+                    else:
+                        logger.warning(f"Redis connection attempt {attempt + 1} failed, retrying: {e}")
+                        await asyncio.sleep(1)
         
         return self._client
     

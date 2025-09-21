@@ -126,12 +126,36 @@ Use the `to_term_code()` function in `services/terms.py` to convert seasons and 
 
 ## Testing
 
-Run the comprehensive test suite:
+### Quick Test Suite
+Run the automated test suite:
 ```bash
 python test_endpoints.py
 ```
 
 This will test all endpoints and verify the system works end-to-end.
+
+### Interactive Testing
+For a more hands-on experience, run the interactive test:
+```bash
+python interactive_test.py
+```
+
+This allows you to:
+- Build schedules with custom preferences
+- Test optimization with different constraints
+- Explore course sections
+- Check environment configuration
+
+### Quick Demo
+To see the backend in action without interaction:
+```bash
+python demo.py
+```
+
+This demonstrates the complete workflow:
+- Building a schedule with preferences
+- Optimizing with new constraints
+- Showing real course sections and prerequisites
 
 ## Development
 

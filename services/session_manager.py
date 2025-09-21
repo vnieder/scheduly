@@ -11,6 +11,7 @@ import logging
 from .session_storage import SessionStorage, SessionStorageType
 from .redis_session import RedisSessionStorage
 from .database_session import DatabaseSessionStorage
+from .memory_session import MemorySessionStorage
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +41,21 @@ class SessionManager:
         self.storage_type = storage_type
         
         if storage_type == SessionStorageType.REDIS:
-            self.storage = self._create_redis_storage(**kwargs)
+            try:
+                self.storage = self._create_redis_storage(**kwargs)
+            except Exception as e:
+                logger.warning(f"Failed to initialize Redis storage, falling back to memory: {e}")
+                self.storage = self._create_memory_storage(**kwargs)
+                self.storage_type = SessionStorageType.MEMORY
         elif storage_type == SessionStorageType.DATABASE:
-            self.storage = self._create_database_storage(**kwargs)
+            try:
+                self.storage = self._create_database_storage(**kwargs)
+            except Exception as e:
+                logger.warning(f"Failed to initialize Database storage, falling back to memory: {e}")
+                self.storage = self._create_memory_storage(**kwargs)
+                self.storage_type = SessionStorageType.MEMORY
+        elif storage_type == SessionStorageType.MEMORY:
+            self.storage = self._create_memory_storage(**kwargs)
         else:
             raise ValueError(f"Unsupported storage type: {storage_type}")
         
@@ -111,6 +124,15 @@ class SessionManager:
         }
         
         return DatabaseSessionStorage(**config)
+    
+    def _create_memory_storage(self, **kwargs) -> MemorySessionStorage:
+        """Create Memory storage instance."""
+        config = {
+            "timeout_hours": int(os.getenv("SESSION_TIMEOUT_HOURS", "24")),
+            **kwargs
+        }
+        
+        return MemorySessionStorage(**config)
     
     async def get_storage(self) -> SessionStorage:
         """Get initialized storage instance."""
