@@ -2,9 +2,7 @@
 
 ## Demo
 
-<video src="https://github.com/vnieder/scheduly/raw/main/Scheduly_demo.mp4" controls width="600"></video>
-
-[Watch the demo](./Scheduly_demo.mp4)
+![Watch the demo](./Scheduly_demo.mp4)
 
 ## Contributors
 Vincent Niedermayer - VMN16@pitt.edu
