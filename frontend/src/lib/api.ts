@@ -130,7 +130,7 @@ class ApiClient {
   async buildSchedule(
     data: BuildScheduleRequest
   ): Promise<BuildScheduleResponse> {
-    return this.request<BuildScheduleResponse>("/proxy/build", {
+    return this.request<BuildScheduleResponse>("/build", {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -139,7 +139,7 @@ class ApiClient {
   async optimizeSchedule(
     data: OptimizeScheduleRequest
   ): Promise<OptimizeScheduleResponse> {
-    return this.request<OptimizeScheduleResponse>("/proxy/optimize", {
+    return this.request<OptimizeScheduleResponse>("/optimize", {
       method: "POST",
       body: JSON.stringify(data),
     });
