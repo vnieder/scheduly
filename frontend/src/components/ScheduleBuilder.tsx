@@ -2,31 +2,21 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-// User type from Auth0
-type User = {
-  sub?: string;
-  name?: string;
-  email?: string;
-  picture?: string;
-  [key: string]: unknown;
-};
 import { apiClient, BuildScheduleResponse } from "@/lib/api";
+import { useUser } from "@/lib/user-context";
 
 type FormStep = "school" | "major" | "loading" | "calendar";
 
 interface ScheduleBuilderProps {
   onScheduleBuilt: (data: BuildScheduleResponse) => void;
   onAuthRequired: () => void;
-  user: User | undefined;
-  isLoading: boolean;
 }
 
 export default function ScheduleBuilder({
   onScheduleBuilt,
   onAuthRequired,
-  user,
-  isLoading,
 }: ScheduleBuilderProps) {
+  const { user, isLoading } = useUser();
   const [currentStep, setCurrentStep] = useState<FormStep>("school");
   const [school, setSchool] = useState("");
   const [major, setMajor] = useState("");

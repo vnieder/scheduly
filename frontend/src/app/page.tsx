@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "@auth0/nextjs-auth0";
+import { useUser } from "@/lib/user-context";
 import { useRouter } from "next/navigation";
 import ScheduleBuilder from "@/components/ScheduleBuilder";
 import ScheduleCalendar from "@/components/ScheduleCalendar";
@@ -18,15 +18,11 @@ export default function Home() {
   const [requiresAuth, setRequiresAuth] = useState(false);
 
   // Check if user needs to be authenticated for the current action
-  const checkAuthRequirement = () => {
+  useEffect(() => {
     if (!isLoading && !user && requiresAuth) {
       router.push("/signin");
     }
-  };
-
-  useEffect(() => {
-    checkAuthRequirement();
-  }, [user, isLoading, requiresAuth, router, checkAuthRequirement]);
+  }, [user, isLoading, requiresAuth, router]);
 
   const handleScheduleBuilt = (data: BuildScheduleResponse) => {
     setScheduleData(data);
@@ -100,8 +96,6 @@ export default function Home() {
     <ScheduleBuilder
       onScheduleBuilt={handleScheduleBuilt}
       onAuthRequired={handleAuthRequired}
-      user={user}
-      isLoading={isLoading}
     />
   );
 }
