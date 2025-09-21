@@ -1,11 +1,11 @@
 export default function Home() {
   return (
-    <section className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24">
+    <section className="mx-auto max-w-3xl min-h-[calc(100vh-8rem)] flex flex-col justify-center px-4 sm:px-6 py-16 sm:py-24">
       <div className="text-center space-y-4 sm:space-y-6">
-        <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight">
+        <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight font-camera">
           Build your dream schedule
         </h1>
-        <p className="text-sm sm:text-base text-black/60 dark:text-white/60">
+        <p className="text-base sm:text-xl text-black/60 dark:text-white/60">
           The easiest way to build schedules that fit into your life.
         </p>
       </div>

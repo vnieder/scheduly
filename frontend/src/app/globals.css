@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
+/* Font definitions */
+/* Add your CameraPlainVariable font files here */
+@font-face {
+  font-family: "CameraPlainVariable";
+  src: url("/fonts/CameraPlainVariable-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #0a0a0a;
+  --font-camera: "CameraPlainVariable", var(--font-space-grotesk), sans-serif;
+}
+
+/* Font utility classes */
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+.font-camera {
+  font-family: var(--font-camera);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -175,6 +195,11 @@ body {
 
 .glow-blob {
   will-change: transform, opacity, filter;
+}
+
+.glow-blob-wrap {
+  pointer-events: auto;
+  cursor: default;
 }
 
 @keyframes blob-drift-a {
