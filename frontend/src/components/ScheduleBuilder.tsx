@@ -181,7 +181,7 @@ export default function ScheduleBuilder({
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             disabled={isInputDisabled()}
-            className="w-full h-12 sm:h-14 rounded-2xl border border-black/[.12] dark:border-white/[.18] bg-white dark:bg-black/40 px-4 pr-28 text-base sm:text-lg outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-12 sm:h-14 rounded-2xl border border-black/[.12] dark:border-white/[.18] bg-white dark:bg-black/40 px-4 pr-28 text-base sm:text-lg outline-none focus:ring-0 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed autofill-fix"
             whileFocus={{ scale: 1.02 }}
             transition={{ duration: 0.2 }}
           />

@@ -51,7 +51,7 @@ export default function RootLayout({
               />
               Scheduly
             </Link>
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-4 text-base">
               <a href="/login">Login</a>
               <a href="/get-started">Get started</a>
             </div>

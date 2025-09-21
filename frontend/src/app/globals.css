@@ -366,6 +366,93 @@ body {
   background: radial-gradient(closest-side, #f97316, transparent 70%);
 }
 
+/* Completely disable autofill styling - no color changes at all */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+input:-webkit-autofill:valid,
+input:-webkit-autofill:invalid {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #0a0a0a !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  color: #0a0a0a !important;
+  outline: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  input:-webkit-autofill:valid,
+  input:-webkit-autofill:invalid {
+    -webkit-text-fill-color: #ededed !important;
+    color: #ededed !important;
+  }
+}
+
+/* Force override for any remaining autofill styling */
+input[type="text"]:-webkit-autofill,
+input[type="text"]:-webkit-autofill:hover,
+input[type="text"]:-webkit-autofill:focus,
+input[type="text"]:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #0a0a0a !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  color: #0a0a0a !important;
+  outline: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  input[type="text"]:-webkit-autofill,
+  input[type="text"]:-webkit-autofill:hover,
+  input[type="text"]:-webkit-autofill:focus,
+  input[type="text"]:-webkit-autofill:active {
+    -webkit-text-fill-color: #ededed !important;
+    color: #ededed !important;
+  }
+}
+
+/* Specific class for autofill fix */
+.autofill-fix:-webkit-autofill,
+.autofill-fix:-webkit-autofill:hover,
+.autofill-fix:-webkit-autofill:focus,
+.autofill-fix:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #0a0a0a !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  color: #0a0a0a !important;
+  outline: none !important;
+}
+
+/* Remove focus ring/outline but keep original border */
+.autofill-fix:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.autofill-fix:-webkit-autofill:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .autofill-fix:-webkit-autofill,
+  .autofill-fix:-webkit-autofill:hover,
+  .autofill-fix:-webkit-autofill:focus,
+  .autofill-fix:-webkit-autofill:active {
+    -webkit-text-fill-color: #ededed !important;
+    color: #ededed !important;
+  }
+}
+
 .glow-blob--pink {
   background: radial-gradient(closest-side, #ec4899, transparent 70%);
 }
