@@ -75,9 +75,9 @@ class SessionManager:
             logger.info("Detected Database URL, using Database storage")
             return SessionStorageType.DATABASE
         else:
-            # Default to Redis for development
-            logger.warning("No storage URL detected, defaulting to Redis")
-            return SessionStorageType.REDIS
+            # Default to memory storage for reliability
+            logger.warning("No storage URL detected, using memory storage")
+            return SessionStorageType.MEMORY
     
     def _create_redis_storage(self, **kwargs) -> RedisSessionStorage:
         """Create Redis storage instance."""

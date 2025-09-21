@@ -168,8 +168,20 @@ def validate_course_codes(course_codes: List[str]) -> List[str]:
             validated.append(clean_code)
     return validated
 
+@app.get("/")
+def root():
+    """Root endpoint for Railway health checks."""
+    return {"message": "Scheduly Backend API", "status": "running", "version": "1.0.0"}
+
 @app.get("/health")
 def health_check():
+    """Simple health check that doesn't depend on session storage."""
+    try:
+        # Test session storage without failing
+        storage_ok = session_manager.storage is not None
+    except Exception:
+        storage_ok = False
+    
     return {
         "ok": True,
         "mode": APP_MODE,
@@ -182,6 +194,10 @@ def health_check():
             "ai_requirements": PRODUCTION_MODE,
             "ai_prerequisites": PRODUCTION_MODE,
             "multi_university": PRODUCTION_MODE
+        },
+        "storage": {
+            "initialized": storage_ok,
+            "type": session_manager.storage_type.value if session_manager.storage_type else "unknown"
         }
     }
 
@@ -530,7 +546,8 @@ async def startup_event():
         logger.info("Session storage initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize session storage: {e}")
-        raise
+        # Don't raise the exception - let the app start with fallback storage
+        logger.warning("Application will start with memory storage fallback")
 
 @app.on_event("shutdown")
 async def shutdown_event():
