@@ -14,6 +14,8 @@ from src.services.catalog.pitt_catalog import get_sections as get_pitt_sections
 from src.services.catalog.generic_catalog import get_sections as get_generic_sections
 from src.services.schedule.solver import build_schedule
 from src.services.requirements.terms import to_term_code
+from src.services.auth.auth0_middleware import get_current_user, get_optional_user
+from src.services.storage.user_schedule_storage import UserScheduleStorage
 # Conditional imports for production mode only
 try:
     from src.agents.gemini import parse_preferences, get_requirements_with_prereqs
@@ -109,6 +111,14 @@ class OptimizePayload(BaseModel):
 class SectionsPayload(BaseModel):
     term: str
     course_codes: List[str]
+
+class SaveSchedulePayload(BaseModel):
+    session_id: str
+    title: Optional[str] = None
+
+class UpdateSchedulePayload(BaseModel):
+    title: Optional[str] = None
+    is_favorite: Optional[bool] = None
 
 # Removed SemesterPlanPayload - multi-semester planning out of scope
 
@@ -556,6 +566,201 @@ def catalog_sections(p: SectionsPayload):
     except Exception as e:
         logger.error(f"Unexpected error in /catalog/sections: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+# Initialize user schedule storage
+user_schedule_storage = None
+
+def get_user_schedule_storage():
+    """Get user schedule storage instance."""
+    global user_schedule_storage
+    if user_schedule_storage is None:
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise HTTPException(status_code=500, detail="Database URL not configured")
+        user_schedule_storage = UserScheduleStorage(database_url)
+    return user_schedule_storage
+
+# User and Schedule Management Endpoints
+
+@app.post("/schedules")
+async def save_schedule(
+    payload: SaveSchedulePayload,
+    current_user: dict = Depends(get_current_user)
+):
+    """Save a schedule for the authenticated user."""
+    try:
+        # Get session data
+        storage = await get_session_storage()
+        session_data_obj = await storage.get_session(payload.session_id)
+        if session_data_obj is None:
+            raise SessionNotFoundError(payload.session_id)
+        
+        session_data = session_data_obj.data
+        
+        # Save to user schedule storage
+        user_storage = get_user_schedule_storage()
+        schedule = user_storage.save_schedule(
+            auth0_id=current_user["sub"],
+            session_id=payload.session_id,
+            school=session_data["school"],
+            major=session_data["major"],
+            term=session_data["term"],
+            schedule_data=session_data["last_plan"],
+            title=payload.title
+        )
+        
+        return {
+            "id": str(schedule.id),
+            "title": schedule.title,
+            "school": schedule.school,
+            "major": schedule.major,
+            "term": schedule.term,
+            "created_at": schedule.created_at.isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error saving schedule: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save schedule")
+
+@app.get("/schedules")
+async def get_user_schedules(
+    limit: int = 50,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all schedules for the authenticated user."""
+    try:
+        user_storage = get_user_schedule_storage()
+        schedules = user_storage.get_user_schedules(
+            auth0_id=current_user["sub"],
+            limit=limit,
+            offset=offset
+        )
+        
+        return {
+            "schedules": [
+                {
+                    "id": str(schedule.id),
+                    "title": schedule.title,
+                    "school": schedule.school,
+                    "major": schedule.major,
+                    "term": schedule.term,
+                    "is_favorite": schedule.is_favorite,
+                    "created_at": schedule.created_at.isoformat(),
+                    "updated_at": schedule.updated_at.isoformat()
+                }
+                for schedule in schedules
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting user schedules: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get schedules")
+
+@app.get("/schedules/{schedule_id}")
+async def get_schedule(
+    schedule_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a specific schedule by ID."""
+    try:
+        user_storage = get_user_schedule_storage()
+        schedule = user_storage.get_schedule_by_id(
+            auth0_id=current_user["sub"],
+            schedule_id=schedule_id
+        )
+        
+        if not schedule:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+        
+        return {
+            "id": str(schedule.id),
+            "title": schedule.title,
+            "school": schedule.school,
+            "major": schedule.major,
+            "term": schedule.term,
+            "schedule_data": schedule.schedule_data,
+            "is_favorite": schedule.is_favorite,
+            "created_at": schedule.created_at.isoformat(),
+            "updated_at": schedule.updated_at.isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting schedule: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get schedule")
+
+@app.put("/schedules/{schedule_id}")
+async def update_schedule(
+    schedule_id: str,
+    payload: UpdateSchedulePayload,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update a schedule."""
+    try:
+        user_storage = get_user_schedule_storage()
+        
+        if payload.title is not None:
+            success = user_storage.update_schedule_title(
+                auth0_id=current_user["sub"],
+                schedule_id=schedule_id,
+                title=payload.title
+            )
+            if not success:
+                raise HTTPException(status_code=404, detail="Schedule not found")
+        
+        if payload.is_favorite is not None:
+            success = user_storage.toggle_favorite(
+                auth0_id=current_user["sub"],
+                schedule_id=schedule_id
+            )
+            if not success:
+                raise HTTPException(status_code=404, detail="Schedule not found")
+        
+        return {"message": "Schedule updated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating schedule: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update schedule")
+
+@app.delete("/schedules/{schedule_id}")
+async def delete_schedule(
+    schedule_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete a schedule."""
+    try:
+        user_storage = get_user_schedule_storage()
+        success = user_storage.delete_schedule(
+            auth0_id=current_user["sub"],
+            schedule_id=schedule_id
+        )
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+        
+        return {"message": "Schedule deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting schedule: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete schedule")
+
+@app.get("/user/profile")
+async def get_user_profile(current_user: dict = Depends(get_current_user)):
+    """Get current user profile."""
+    return {
+        "sub": current_user["sub"],
+        "email": current_user["email"],
+        "name": current_user["name"],
+        "picture": current_user["picture"]
+    }
 
 # Startup and shutdown events
 @app.on_event("startup")
