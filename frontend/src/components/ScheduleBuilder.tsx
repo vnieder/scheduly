@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User } from "@auth0/nextjs-auth0/client";
+// User type from Auth0
+type User = {
+  sub?: string;
+  name?: string;
+  email?: string;
+  picture?: string;
+  [key: string]: unknown;
+};
 import { apiClient, BuildScheduleResponse } from "@/lib/api";
 
 type FormStep = "school" | "major" | "loading" | "calendar";
