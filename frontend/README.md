@@ -1,6 +1,6 @@
 ## Scheduly Frontend
 
-Next.js 15 + React 19 Scheduler app using TypeScript and Tailwind CSS v4.
+Next.js 15 + React 19 app using TypeScript and Tailwind CSS v4.
 
 ### Stack
 
