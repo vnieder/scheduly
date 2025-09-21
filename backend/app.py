@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import uuid
@@ -39,6 +40,43 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
     expose_headers=["Content-Length", "X-Total-Count"],
 )
+
+# Custom response function that always includes CORS headers
+def cors_response(data: dict, status_code: int = 200, origin: str = None):
+    """Create a response with proper CORS headers"""
+    headers = {
+        "Access-Control-Allow-Origin": origin or "https://www.scheduly.space",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "Content-Length, X-Total-Count"
+    }
+    return JSONResponse(content=data, status_code=status_code, headers=headers)
+
+# Add custom middleware to force CORS headers (override Railway's CORS)
+@app.middleware("http")
+async def force_cors_headers(request: Request, call_next):
+    origin = request.headers.get("origin")
+    
+    # Check if origin is allowed
+    is_allowed = False
+    if origin:
+        for allowed_origin in allowed_origins:
+            if allowed_origin == origin or (allowed_origin.startswith("https://*.") and origin.endswith(allowed_origin[8:])):
+                is_allowed = True
+                break
+    
+    response = await call_next(request)
+    
+    # Force CORS headers if origin is allowed
+    if is_allowed:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Expose-Headers"] = "Content-Length, X-Total-Count"
+    
+    return response
 
 # Configuration from environment variables
 DEFAULT_TERM = os.getenv("DEFAULT_TERM", "2251")
@@ -175,6 +213,55 @@ def cors_test():
         "timestamp": datetime.now().isoformat(),
         "allowed_origins": allowed_origins
     }
+
+@app.get("/cors-debug")
+def cors_debug(request: Request):
+    """Debug endpoint to check CORS headers"""
+    return {
+        "origin": request.headers.get("origin"),
+        "user_agent": request.headers.get("user-agent"),
+        "allowed_origins": allowed_origins,
+        "headers": dict(request.headers)
+    }
+
+@app.get("/cors-simple")
+async def cors_simple(request: Request):
+    """Simple endpoint that manually sets CORS headers"""
+    origin = request.headers.get("origin")
+    
+    # Create response with manual CORS headers
+    response_data = {
+        "message": "CORS test successful",
+        "origin": origin,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    response = Response(
+        content=json.dumps(response_data),
+        media_type="application/json",
+        headers={
+            "Access-Control-Allow-Origin": origin if origin in allowed_origins else "https://www.scheduly.space",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+            "Access-Control-Allow-Credentials": "true",
+        }
+    )
+    
+    return response
+
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    """Handle all OPTIONS requests for CORS preflight"""
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Max-Age": "86400"
+        }
+    )
 
 @app.post("/build")
 async def build_schedule_endpoint(p: BuildPayload):

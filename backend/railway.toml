@@ -9,3 +9,7 @@ PORT = "8000"
 
 [build]
 builder = "NIXPACKS"
+
+[deploy.healthcheck]
+path = "/health"
+timeout = 300
