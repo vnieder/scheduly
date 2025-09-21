@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import BackgroundFX from "./BackgroundFX";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +28,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <div className="fixed inset-0 -z-10 overflow-hidden">
-          <BackgroundFX />
+          <div className="ambient-gradient ambient-gradient--a" />
+          <div className="ambient-gradient ambient-gradient--b" />
+          <div className="ambient-gradient ambient-gradient--c" />
           <div className="bg-grid-soft" />
           <div
             className="glow-blob glow-blob--cyan"

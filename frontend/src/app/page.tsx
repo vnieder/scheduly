@@ -6,7 +6,7 @@ export default function Home() {
           Build your dream schedule
         </h1>
         <p className="text-sm sm:text-base text-black/60 dark:text-white/60">
-          Tell us your school to get started.
+          The easiest way to build schedules that fit into your life.
         </p>
       </div>
 
