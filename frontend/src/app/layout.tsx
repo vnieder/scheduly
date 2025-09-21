@@ -39,8 +39,16 @@ export default function RootLayout({
         <BackgroundFX />
         <header className="fixed top-0 inset-x-0 z-50 border-b border-black/[.08] dark:border-white/[.12] bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-2xl font-semibold tracking-tight font-camera hover:opacity-80 transition-opacity">
-              <Image src="/scheduly.svg" alt="Scheduly" width={32} height={32} />
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-2xl font-semibold tracking-tight font-camera hover:opacity-80 transition-opacity"
+            >
+              <Image
+                src="/scheduly.svg"
+                alt="Scheduly"
+                width={32}
+                height={32}
+              />
               Scheduly
             </Link>
             <div className="flex items-center gap-4 text-sm">
