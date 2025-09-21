@@ -530,7 +530,8 @@ async def startup_event():
         logger.info("Session storage initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize session storage: {e}")
-        raise
+        logger.warning("Continuing without session storage - using memory fallback")
+        # Don't raise - allow app to start with memory storage fallback
 
 @app.on_event("shutdown")
 async def shutdown_event():
