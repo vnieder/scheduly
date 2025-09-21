@@ -104,24 +104,6 @@ export default function ScheduleCalendar({ scheduleData, onBack }: ScheduleCalen
   if (!sections || sections.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="border-b border-black/[.08] dark:border-white/[.12] bg-background/70 backdrop-blur">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={onBack}
-                className="flex items-center gap-2 text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back
-              </button>
-              <h1 className="text-xl font-semibold">Your Schedule</h1>
-            </div>
-          </div>
-        </div>
-
         {/* No Schedule Content */}
         <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24">
           <div className="text-center space-y-4 sm:space-y-6">
@@ -248,27 +230,6 @@ export default function ScheduleCalendar({ scheduleData, onBack }: ScheduleCalen
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-black/[.08] dark:border-white/[.12] bg-background/70 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </button>
-            <h1 className="text-xl font-semibold">Your Schedule</h1>
-          </div>
-          <div className="text-sm text-black/60 dark:text-white/60">
-            Session: {scheduleData.session_id.slice(0, 8)}...
-          </div>
-        </div>
-      </div>
-
       {/* Schedule Content */}
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
         {/* Schedule Summary */}

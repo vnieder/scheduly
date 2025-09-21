@@ -23,7 +23,7 @@ app = FastAPI(title="Scheduly Backend")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://scheduly.space"],
+    allow_origins=["http://localhost:3000", "https://scheduly.space", "https://www.scheduly.space"],
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "Authorization"],
 )

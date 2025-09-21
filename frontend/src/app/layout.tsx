@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import BackgroundFX from "./BackgroundFX";
 
@@ -37,10 +38,10 @@ export default function RootLayout({
         <BackgroundFX />
         <header className="fixed top-0 inset-x-0 z-50 border-b border-black/[.08] dark:border-white/[.12] bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-2xl font-semibold tracking-tight font-camera">
+            <Link href="/" className="flex items-center gap-2 text-2xl font-semibold tracking-tight font-camera hover:opacity-80 transition-opacity">
               <img src="/scheduly.svg" alt="Scheduly" className="w-8 h-8" />
               Scheduly
-            </div>
+            </Link>
             <div className="flex items-center gap-4 text-sm">
               <a href="/login">Login</a>
               <a href="/get-started">Get started</a>
