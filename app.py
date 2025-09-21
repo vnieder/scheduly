@@ -370,4 +370,3 @@ async def shutdown_event():
     except Exception as e:
         logger.error(f"Error closing session storage: {e}")
 
-# Removed multi-semester planning endpoint - out of scope for current frontend
