@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
-  process.env.BACKEND_URL || "https://scheduly-backend-production.railway.app";
-
+  process.env.BACKEND_URL || "https://scheduly-production.up.railway.app"
 export async function POST(request: NextRequest) {
   try {
     console.log("Proxy request received");

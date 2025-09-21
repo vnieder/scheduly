@@ -1,6 +1,6 @@
 [deploy]
 startCommand = "uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1"
-# Updated to fix deployment issue
+# Updated to fix deployment issue - force redeploy
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
