@@ -145,7 +145,7 @@ class ApiClient {
   async buildSchedule(
     data: BuildScheduleRequest
   ): Promise<BuildScheduleResponse> {
-    return this.request<BuildScheduleResponse>("/proxy/build", {
+    return this.request<BuildScheduleResponse>("/build", {
       method: "POST",
       body: JSON.stringify(data),
     });
