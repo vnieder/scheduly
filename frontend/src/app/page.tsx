@@ -16,23 +16,14 @@ export default function Home() {
     useState<BuildScheduleResponse | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [, setShowHistorySidebar] = useState(false);
-  const [requiresAuth, setRequiresAuth] = useState(false);
-
-  // Check if user needs to be authenticated for the current action
-  useEffect(() => {
-    if (!isLoading && !user && requiresAuth) {
-      router.push("/signin");
-    }
-  }, [user, isLoading, requiresAuth, router]);
+  // Authentication removed - no auth checks needed
 
   const handleScheduleBuilt = (data: BuildScheduleResponse) => {
     setScheduleData(data);
     setShowCalendar(true);
   };
 
-  const handleAuthRequired = () => {
-    setRequiresAuth(true);
-  };
+  // Auth requirement removed
 
   const handleBackToBuilder = () => {
     setShowCalendar(false);
@@ -97,7 +88,7 @@ export default function Home() {
   return (
     <ScheduleBuilder
       onScheduleBuilt={handleScheduleBuilt}
-      onAuthRequired={handleAuthRequired}
+      onAuthRequired={() => {}} // No-op since auth is removed
     />
   );
 }

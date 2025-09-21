@@ -38,11 +38,7 @@ export default function ScheduleBuilder({
         return;
       }
 
-      // Check if user is authenticated before building schedule
-      if (!user && !isLoading) {
-        onAuthRequired();
-        return;
-      }
+      // No authentication required - proceed directly to building schedule
 
       // Build schedule
       setCurrentStep("loading");
@@ -108,7 +104,7 @@ export default function ScheduleBuilder({
       case "school":
         return "Continue";
       case "major":
-        return user ? "Build Schedule" : "Sign in to Build";
+        return "Build Schedule";
       case "loading":
         return "Building...";
       default:
@@ -217,38 +213,6 @@ export default function ScheduleBuilder({
             transition={{ duration: 0.3 }}
           >
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </motion.div>
-        )}
-
-        {/* Authentication prompt for major step */}
-        {currentStep === "major" && !user && !isLoading && (
-          <motion.div
-            className="mt-6 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <svg
-                  className="w-5 h-5 text-blue-600 dark:text-blue-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  <strong>Sign in required:</strong> To build and save your
-                  schedule, please sign in first.
-                </p>
-              </div>
-            </div>
           </motion.div>
         )}
       </motion.div>

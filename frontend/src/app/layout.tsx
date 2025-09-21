@@ -49,8 +49,9 @@ export default function RootLayout({
               Scheduly
             </Link>
             <div className="flex items-center gap-4 text-base">
-              <Link href="/api/auth/login">Login</Link>
-              <Link href="/api/auth/login">Get started</Link>
+              <span className="text-sm text-black/60 dark:text-white/60">
+                Build your schedule instantly
+              </span>
             </div>
           </div>
         </header>

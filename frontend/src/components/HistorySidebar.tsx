@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser } from "@auth0/nextjs-auth0";
+// Auth0 removed - no authentication needed
 
 interface ScheduleHistory {
   id: string;
@@ -25,15 +25,15 @@ export default function HistorySidebar({
   onLoadSchedule,
   onSaveCurrentSchedule,
 }: HistorySidebarProps) {
-  const { user } = useUser();
+  // Auth removed - no user context needed
   const [schedules, setSchedules] = useState<ScheduleHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && user) {
+    if (isOpen) {
       loadSchedules();
     }
-  }, [isOpen, user]);
+  }, [isOpen]);
 
   const loadSchedules = async () => {
     setIsLoading(true);
