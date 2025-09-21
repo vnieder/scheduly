@@ -9,7 +9,7 @@ import re
 from typing import List, Dict, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 import logging
-from agents.gemini import client, MODEL
+from src.agents.gemini import client, MODEL
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
 from typing import List
-from models.schemas import Section
+from src.models.schemas import Section
 import requests
 import logging
 import time

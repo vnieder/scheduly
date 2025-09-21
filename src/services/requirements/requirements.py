@@ -1,5 +1,5 @@
-from models.schemas import RequirementSet
-from agents.gemini import client, MODEL, requirement_set_schema
+from src.models.schemas import RequirementSet
+from src.agents.gemini import client, MODEL, requirement_set_schema
 import logging
 
 logger = logging.getLogger(__name__)

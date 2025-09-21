@@ -1,4 +1,4 @@
-from models.schemas import Section, Preferences, SchedulePlan, Prereq
+from src.models.schemas import Section, Preferences, SchedulePlan, Prereq
 from typing import List, Set
 
 def _overlap(a: Section, b: Section) -> bool:

@@ -11,8 +11,8 @@ import logging
 from datetime import datetime
 from typing import Dict
 
-from services.session_manager import session_manager
-from services.session_storage import SessionStorageType
+from src.services.storage.session_manager import session_manager
+from src.services.storage.session_storage import SessionStorageType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

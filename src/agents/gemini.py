@@ -423,7 +423,7 @@ def get_comprehensive_course_info(school: str, query: str) -> dict:
 def get_requirements_with_prereqs(school: str, major: str) -> dict:
     """Get requirements and parse prerequisites using pure web search - no fallbacks."""
     # First get the basic requirements
-    from services.requirements import get_requirements
+    from src.services.requirements.requirements import get_requirements
     requirements = get_requirements(school, major)
     
     # Clean course codes (remove spaces and extract just the course code part)

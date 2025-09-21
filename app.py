@@ -7,12 +7,12 @@ import logging
 import os
 from datetime import datetime, timedelta
 import json
-from models.schemas import RequirementSet, Preferences, SchedulePlan, Section, Prereq
-from services.requirements import get_requirements
-from services.pitt_catalog import get_sections
-from services.solver import build_schedule
-from services.terms import to_term_code
-from agents.gemini import parse_preferences, get_requirements_with_prereqs
+from src.models.schemas import RequirementSet, Preferences, SchedulePlan, Section, Prereq
+from src.services.requirements.requirements import get_requirements
+from src.services.catalog.pitt_catalog import get_sections
+from src.services.schedule.solver import build_schedule
+from src.services.requirements.terms import to_term_code
+from src.agents.gemini import parse_preferences, get_requirements_with_prereqs
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,8 +37,8 @@ SESSION_TIMEOUT_HOURS = int(os.getenv("SESSION_TIMEOUT_HOURS", "24"))
 USE_AI_PREREQUISITES = os.getenv("USE_AI_PREREQUISITES", "false").lower() == "true"
 
 # Session storage using new backend system
-from services.session_manager import session_manager, get_session_storage
-from services.session_storage import SessionStorage, SessionNotFoundError as StorageSessionNotFoundError
+from src.services.storage.session_manager import session_manager, get_session_storage
+from src.services.storage.session_storage import SessionStorage, SessionNotFoundError as StorageSessionNotFoundError
 
 class BuildPayload(BaseModel):
     school: str = DEFAULT_SCHOOL
@@ -171,7 +171,7 @@ async def build_schedule_endpoint(p: BuildPayload):
         prereqs = []
         if not USE_AI_PREREQUISITES and p.school.lower() == "pitt" and p.major.lower() in ["computer science", "cs", "computer science major"]:
             # Use hardcoded prerequisites for Pitt CS courses
-            from models.schemas import Prereq
+            from src.models.schemas import Prereq
             prereqs = [
                 Prereq(course="CS1550", requires=["CS0449", "CS0447"]),
                 Prereq(course="CS1501", requires=["CS0441", "CS0445"]),
@@ -183,10 +183,10 @@ async def build_schedule_endpoint(p: BuildPayload):
         elif USE_AI_PREREQUISITES:
             # Use AI to search for prerequisites
             try:
-                from agents.gemini import get_requirements_with_prereqs
+                from src.agents.gemini import get_requirements_with_prereqs
                 requirements_data = get_requirements_with_prereqs(p.school, p.major)
                 prereqs_data = requirements_data.get("prereqs", [])
-                from models.schemas import Prereq
+                from src.models.schemas import Prereq
                 prereqs = [Prereq(**p) for p in prereqs_data]
                 logger.info("Using AI-searched prerequisites")
             except Exception as e:
