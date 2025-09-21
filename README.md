@@ -1,6 +1,14 @@
-# Scheduly Monorepo
+# Scheduly Repo
 
-Monorepo containing the backend (FastAPI) and frontend (Next.js + TypeScript + Tailwind CSS).
+Build your dream schedule
+
+## Demo
+
+https://youtu.be/QnAoNaTBdOU
+
+## Contributors
+Vincent Niedermayer - VMN16@pitt.edu
+Ava Luu - AML470@pitt.edu
 
 ## Structure
 
