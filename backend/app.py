@@ -197,16 +197,18 @@ def _get_generic_prerequisites(major: str) -> List:
         Prereq(course="STAT200", requires=["MATH100"]),
     ]
 
-def get_sections(term: str, course_codes: List[str], include_recitations: bool = False):
+def get_sections(term: str, course_codes: List[str], include_recitations: bool = False, school: str = None):
     """Choose the appropriate sections provider based on mode and school."""
     if DEVELOPMENT_MODE:
         # In development mode, use generic sections for any school
         return get_generic_sections(term, course_codes, include_recitations)
     else:
         # In production mode, use Pitt catalog for Pitt, generic for others
-        # For now, use generic for all schools in production mode
-        # This could be enhanced to support multiple real catalog APIs
-        return get_generic_sections(term, course_codes, include_recitations)
+        if school and school.lower() == "pitt":
+            return get_pitt_sections(term, course_codes, include_recitations)
+        else:
+            # Use generic for non-Pitt schools
+            return get_generic_sections(term, course_codes, include_recitations)
 
 @app.get("/health")
 def health_check():
