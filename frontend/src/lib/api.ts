@@ -96,6 +96,17 @@ class ApiClient {
     // Use Next.js API proxy to bypass CORS
     const url = this.baseUrl;
 
+    // Parse the request body if it exists
+    let requestData = {};
+    if (options.body) {
+      try {
+        requestData = JSON.parse(options.body as string);
+      } catch (e) {
+        console.error("Failed to parse request body:", e);
+        requestData = {};
+      }
+    }
+
     const config: RequestInit = {
       method: "POST",
       headers: {
@@ -104,7 +115,7 @@ class ApiClient {
       },
       body: JSON.stringify({
         endpoint: endpoint,
-        ...(options.body ? JSON.parse(options.body as string) : {}),
+        ...requestData,
       }),
     };
 
