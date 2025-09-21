@@ -1,11 +1,13 @@
 [deploy]
-startCommand = "uvicorn app:app --host 0.0.0.0 --port $PORT"
+startCommand = "uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 
 [env]
 PORT = "8000"
+# Disable Railway's platform CORS
+RAILWAY_PUBLIC_DOMAIN = "scheduly-backend-production.railway.app"
 
 [build]
 builder = "NIXPACKS"

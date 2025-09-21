@@ -263,6 +263,29 @@ async def options_handler(path: str):
         }
     )
 
+# CORS Proxy endpoint to bypass Railway's platform CORS
+@app.post("/proxy/build")
+async def proxy_build_endpoint(p: BuildPayload):
+    """Proxy endpoint that bypasses Railway's CORS restrictions"""
+    try:
+        # Call the actual build endpoint internally
+        result = await build_schedule_endpoint(p)
+        return cors_response(result)
+    except Exception as e:
+        logger.error(f"Proxy build error: {e}")
+        return cors_response({"error": str(e)}, 500)
+
+@app.post("/proxy/optimize")
+async def proxy_optimize_endpoint(p: OptimizePayload):
+    """Proxy endpoint that bypasses Railway's CORS restrictions"""
+    try:
+        # Call the actual optimize endpoint internally
+        result = await optimize_schedule(p)
+        return cors_response(result)
+    except Exception as e:
+        logger.error(f"Proxy optimize error: {e}")
+        return cors_response({"error": str(e)}, 500)
+
 @app.post("/build")
 async def build_schedule_endpoint(p: BuildPayload):
     try:

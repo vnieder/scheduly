@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Core data types matching backend schemas
 export interface ChooseFrom {
@@ -89,11 +89,16 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    
+    // Ensure no double slashes in URL
+    const baseUrl = this.baseUrl.endsWith("/")
+      ? this.baseUrl.slice(0, -1)
+      : this.baseUrl;
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = `${baseUrl}${cleanEndpoint}`;
+
     const config: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
@@ -101,10 +106,12 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.detail || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       return await response.json();
@@ -112,28 +119,31 @@ class ApiClient {
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Network error occurred');
+      throw new Error("Network error occurred");
     }
   }
 
   async healthCheck(): Promise<HealthCheckResponse> {
-    return this.request<HealthCheckResponse>('/health');
+    return this.request<HealthCheckResponse>("/health");
   }
 
-  async buildSchedule(data: BuildScheduleRequest): Promise<BuildScheduleResponse> {
-    return this.request<BuildScheduleResponse>('/build', {
-      method: 'POST',
+  async buildSchedule(
+    data: BuildScheduleRequest
+  ): Promise<BuildScheduleResponse> {
+    return this.request<BuildScheduleResponse>("/proxy/build", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  async optimizeSchedule(data: OptimizeScheduleRequest): Promise<OptimizeScheduleResponse> {
-    return this.request<OptimizeScheduleResponse>('/optimize', {
-      method: 'POST',
+  async optimizeSchedule(
+    data: OptimizeScheduleRequest
+  ): Promise<OptimizeScheduleResponse> {
+    return this.request<OptimizeScheduleResponse>("/proxy/optimize", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 }
 
 export const apiClient = new ApiClient();
-
