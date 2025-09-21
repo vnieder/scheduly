@@ -1,8 +1,84 @@
 from src.models.schemas import RequirementSet
-from src.agents.gemini import client, MODEL, requirement_set_schema
 import logging
 
+# Conditional imports for production mode only
+try:
+    from src.agents.gemini import client, MODEL, requirement_set_schema
+    GEMINI_AVAILABLE = True
+except (ImportError, ValueError) as e:
+    # GEMINI_API_KEY not set or other import error
+    GEMINI_AVAILABLE = False
+    client = None
+    MODEL = None
+    requirement_set_schema = None
+
 logger = logging.getLogger(__name__)
+
+def _get_generic_requirements(school: str, major: str) -> RequirementSet:
+    """Generate generic requirements template for any school/major combination."""
+    # Create a generic template that works for any school/major
+    major_code = major[:2].upper() if len(major) >= 2 else "CS"
+    
+    return RequirementSet(
+        catalogYear="2024-2025",
+        required=[
+            f"{major_code}101",  # Intro course
+            f"{major_code}201",  # Intermediate course
+            f"{major_code}301",  # Advanced course
+            f"{major_code}401",  # Capstone course
+        ],
+        genEds=[
+            {
+                "label": "Writing Intensive",
+                "count": 1,
+                "options": ["WRIT100", "WRIT101", "WRIT102"]
+            },
+            {
+                "label": "Literature",
+                "count": 1, 
+                "options": ["LIT100", "LIT101", "LIT102"]
+            },
+            {
+                "label": "History",
+                "count": 1,
+                "options": ["HIST100", "HIST101", "HIST102"]
+            },
+            {
+                "label": "Social Science",
+                "count": 1,
+                "options": ["SOC100", "SOC101", "SOC102"]
+            },
+            {
+                "label": "Natural Science",
+                "count": 1,
+                "options": ["SCI100", "SCI101", "SCI102"]
+            },
+            {
+                "label": "Arts",
+                "count": 1,
+                "options": ["ART100", "ART101", "ART102"]
+            },
+            {
+                "label": "Philosophy",
+                "count": 1,
+                "options": ["PHIL100", "PHIL101", "PHIL102"]
+            }
+        ],
+        chooseFrom=[
+            {
+                "label": f"Upper Level {major_code} Electives",
+                "count": 2,
+                "options": [f"{major_code}300", f"{major_code}301", f"{major_code}302", f"{major_code}303"]
+            },
+            {
+                "label": "Technical Electives", 
+                "count": 1,
+                "options": ["MATH200", "STAT200", "PHYS200"]
+            }
+        ],
+        minCredits=12,
+        maxCredits=18
+    )
 
 def get_requirements(school: str, major: str) -> RequirementSet:
     """Dynamically fetch degree requirements using web search and AI parsing."""
@@ -12,76 +88,16 @@ def get_requirements(school: str, major: str) -> RequirementSet:
     APP_MODE = os.getenv("APP_MODE", "development").lower()
     DEVELOPMENT_MODE = APP_MODE == "development"
     
-    # Hardcoded fallback for Pitt Computer Science (development mode only)
-    if DEVELOPMENT_MODE and school.lower() == "pitt" and major.lower() in ["computer science", "cs", "computer science major"]:
-        logger.info(f"Using hardcoded requirements for Pitt {major}")
-        return RequirementSet(
-            catalogYear="2024-2025",
-            required=[
-                "CS0401",
-                "CS0441", 
-                "CS0445",
-                "CS0447",
-                "CS0449",
-                "CS1501",
-                "CS1550",
-                "CS1621",
-                "CS1650"
-            ],
-            genEds=[
-                {
-                    "label": "Writing Intensive",
-                    "count": 1,
-                    "options": ["ENGCMP0200", "ENGCMP0201", "ENGCMP0202"]
-                },
-                {
-                    "label": "Literature",
-                    "count": 1, 
-                    "options": ["ENGLIT0630", "ENGLIT0580", "ENGLIT0625"]
-                },
-                {
-                    "label": "History",
-                    "count": 1,
-                    "options": ["HIST0600", "HIST0100", "HIST0200"]
-                },
-                {
-                    "label": "Social Science",
-                    "count": 1,
-                    "options": ["POLI0010", "PSY0010", "SOC0010"]
-                },
-                {
-                    "label": "Natural Science",
-                    "count": 1,
-                    "options": ["CHEM0111", "PHYS0174", "BIOSC0150"]
-                },
-                {
-                    "label": "Arts",
-                    "count": 1,
-                    "options": ["MUSIC0211", "THEA0080", "HAA0010"]
-                },
-                {
-                    "label": "Philosophy",
-                    "count": 1,
-                    "options": ["PHIL0010", "PHIL0050", "PHIL0080"]
-                }
-            ],
-            chooseFrom=[
-                {
-                    "label": "Upper Level CS Electives",
-                    "count": 2,
-                    "options": ["CS1622", "CS1632", "CS1640", "CS1651"]
-                },
-                {
-                    "label": "Technical Electives", 
-                    "count": 1,
-                    "options": ["MATH0230", "STAT1000", "ASTRON0083"]
-                }
-            ],
-            minCredits=12,
-            maxCredits=18
-        )
+    # Generic template for development mode (any school/major)
+    if DEVELOPMENT_MODE:
+        logger.info(f"Using generic template for {school} {major} (development mode)")
+        return _get_generic_requirements(school, major)
     
-    # Production mode or non-Pitt CS: Use AI to fetch requirements
+    # Production mode: Use AI to fetch real requirements
+    if not GEMINI_AVAILABLE:
+        logger.warning(f"GEMINI_API_KEY not available, falling back to generic requirements for {school} {major}")
+        return _get_generic_requirements(school, major)
+    
     logger.info(f"Using AI to fetch requirements for {school} {major}")
     
     # Create a comprehensive prompt for finding all degree requirements

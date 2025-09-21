@@ -10,10 +10,19 @@ from datetime import datetime, timedelta
 import json
 from src.models.schemas import RequirementSet, Preferences, SchedulePlan, Section, Prereq
 from src.services.requirements.requirements import get_requirements
-from src.services.catalog.pitt_catalog import get_sections
+from src.services.catalog.pitt_catalog import get_sections as get_pitt_sections
+from src.services.catalog.generic_catalog import get_sections as get_generic_sections
 from src.services.schedule.solver import build_schedule
 from src.services.requirements.terms import to_term_code
-from src.agents.gemini import parse_preferences, get_requirements_with_prereqs
+# Conditional imports for production mode only
+try:
+    from src.agents.gemini import parse_preferences, get_requirements_with_prereqs
+    GEMINI_AVAILABLE = True
+except (ImportError, ValueError) as e:
+    # GEMINI_API_KEY not set or other import error
+    GEMINI_AVAILABLE = False
+    parse_preferences = None
+    get_requirements_with_prereqs = None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -142,12 +151,9 @@ def validate_term(term: str) -> bool:
 
 def validate_school(school: str) -> bool:
     """Validate school is supported."""
-    if DEVELOPMENT_MODE:
-        # In development mode, only support Pitt for hardcoded data
-        return school.lower() == DEFAULT_SCHOOL.lower()
-    else:
-        # In production mode, support any school (AI will handle requirements)
-        return True
+    # Support any school in both development and production modes
+    # Development mode will use generic templates, production mode will use AI
+    return bool(school and len(school.strip()) >= 2)
 
 def validate_course_codes(course_codes: List[str]) -> List[str]:
     """Validate and clean course codes."""
@@ -168,6 +174,30 @@ def validate_course_codes(course_codes: List[str]) -> List[str]:
             validated.append(clean_code)
     return validated
 
+def _get_generic_prerequisites(major: str) -> List:
+    """Generate generic prerequisites template for any major."""
+    from src.models.schemas import Prereq
+    major_code = major[:2].upper() if len(major) >= 2 else "CS"
+    
+    return [
+        Prereq(course=f"{major_code}401", requires=[f"{major_code}301"]),
+        Prereq(course=f"{major_code}301", requires=[f"{major_code}201"]),
+        Prereq(course=f"{major_code}201", requires=[f"{major_code}101"]),
+        Prereq(course="MATH200", requires=["MATH100"]),
+        Prereq(course="STAT200", requires=["MATH100"]),
+    ]
+
+def get_sections(term: str, course_codes: List[str], include_recitations: bool = False):
+    """Choose the appropriate sections provider based on mode and school."""
+    if DEVELOPMENT_MODE:
+        # In development mode, use generic sections for any school
+        return get_generic_sections(term, course_codes, include_recitations)
+    else:
+        # In production mode, use Pitt catalog for Pitt, generic for others
+        # For now, use generic for all schools in production mode
+        # This could be enhanced to support multiple real catalog APIs
+        return get_generic_sections(term, course_codes, include_recitations)
+
 @app.get("/health")
 def health_check():
     return {
@@ -176,7 +206,7 @@ def health_check():
         "development_mode": DEVELOPMENT_MODE,
         "production_mode": PRODUCTION_MODE,
         "legacy_mode": LEGACY_USE_AI_PREREQUISITES != "",
-        "supported_schools": ["Pitt"] if DEVELOPMENT_MODE else ["Any university (AI-powered)"],
+        "supported_schools": ["Any university"] if DEVELOPMENT_MODE else ["Any university (AI-powered)"],
         "features": {
             "hardcoded_requirements": DEVELOPMENT_MODE,
             "ai_requirements": PRODUCTION_MODE,
@@ -330,7 +360,11 @@ async def build_schedule_endpoint(p: BuildPayload):
                 logger.info("Development mode: Using default preferences")
             else:
                 # Use AI to parse preferences (both modes support this)
-                prefs_data = parse_preferences(p.utterance) if p.utterance else {}
+                if GEMINI_AVAILABLE and parse_preferences:
+                    prefs_data = parse_preferences(p.utterance) if p.utterance else {}
+                else:
+                    logger.warning("GEMINI_API_KEY not available, using default preferences")
+                    prefs_data = {}
                 preferences = Preferences(**prefs_data)
                 logger.info(f"Parsed preferences: {prefs_data}")
         except Exception as e:
@@ -347,26 +381,21 @@ async def build_schedule_endpoint(p: BuildPayload):
         multi_semester_prereqs = []
         
         if DEVELOPMENT_MODE:
-            # Development mode: Use hardcoded prerequisites for Pitt CS
-            if p.school.lower() == "pitt" and p.major.lower() in ["computer science", "cs", "computer science major"]:
-                from src.models.schemas import Prereq
-                multi_semester_prereqs = [
-                    Prereq(course="CS1550", requires=["CS0449", "CS0447"]),
-                    Prereq(course="CS1501", requires=["CS0441", "CS0445"]),
-                    Prereq(course="CS0449", requires=["CS0441"]),
-                    Prereq(course="CS0447", requires=["CS0441"]),
-                    Prereq(course="CS0445", requires=["CS0441"]),
-                ]
-                logger.info("Development mode: Using hardcoded prerequisites for Pitt CS")
-            else:
-                logger.info("Development mode: No hardcoded prerequisites available for this school/major")
+            # Development mode: Use generic prerequisites template
+            from src.models.schemas import Prereq
+            multi_semester_prereqs = _get_generic_prerequisites(p.major)
+            logger.info(f"Development mode: Using generic prerequisites for {p.school} {p.major}")
         else:
             # Production mode: Use AI to search for prerequisites
             try:
-                from src.agents.gemini import get_requirements_with_prereqs
-                requirements_data = get_requirements_with_prereqs(p.school, p.major)
-                prereqs_data = requirements_data.get("prereqs", [])
-                multi_semester_prereqs_data = requirements_data.get("multiSemesterPrereqs", [])
+                if GEMINI_AVAILABLE and get_requirements_with_prereqs:
+                    requirements_data = get_requirements_with_prereqs(p.school, p.major)
+                    prereqs_data = requirements_data.get("prereqs", [])
+                    multi_semester_prereqs_data = requirements_data.get("multiSemesterPrereqs", [])
+                else:
+                    logger.warning("GEMINI_API_KEY not available, using generic prerequisites")
+                    prereqs_data = []
+                    multi_semester_prereqs_data = _get_generic_prerequisites(p.major)
                 from src.models.schemas import Prereq
                 prereqs = [Prereq(**p) for p in prereqs_data]
                 multi_semester_prereqs = [Prereq(**p) for p in multi_semester_prereqs_data]
@@ -434,10 +463,17 @@ async def optimize_schedule(p: OptimizePayload):
         
         # Parse new preferences
         try:
-            new_prefs_data = parse_preferences(p.utterance)
+            if GEMINI_AVAILABLE and parse_preferences:
+                new_prefs_data = parse_preferences(p.utterance)
+            else:
+                logger.warning("GEMINI_API_KEY not available, using default preferences")
+                new_prefs_data = {}
         except Exception as e:
             logger.error(f"Failed to parse preferences: {e}")
-            raise AIServiceError("Gemini", str(e))
+            if GEMINI_AVAILABLE:
+                raise AIServiceError("Gemini", str(e))
+            else:
+                new_prefs_data = {}
         
         # Merge with existing preferences
         existing_prefs = session_data["preferences"]

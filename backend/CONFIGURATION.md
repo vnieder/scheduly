@@ -5,16 +5,18 @@
 The Scheduly backend now supports two distinct modes:
 
 ### Development Mode (`APP_MODE=development`)
+
 - **Purpose**: Fast, reliable responses for frontend development
 - **Features**:
-  - Returns hardcoded Pitt CS data
+  - Returns generic template data for any school/major
   - No AI API calls (no rate limiting)
   - Fast response times
   - Predictable data structure
-  - Only supports Pitt University
+  - Supports any university (with generic templates)
 - **Use Case**: Frontend team development, testing, demos
 
 ### Production Mode (`APP_MODE=production`)
+
 - **Purpose**: Dynamic, AI-powered responses for any university
 - **Features**:
   - AI-generated requirements for any school/major
@@ -51,12 +53,14 @@ SESSION_TIMEOUT_HOURS=24
 ## Quick Start
 
 ### For Frontend Development:
+
 ```bash
 export APP_MODE=development
 uvicorn app:app --reload --port 8000
 ```
 
 ### For Production:
+
 ```bash
 export APP_MODE=production
 export GEMINI_API_KEY=your_key_here
@@ -65,15 +69,15 @@ uvicorn app:app --reload --port 8000
 
 ## Mode Behavior Differences
 
-| Feature | Development Mode | Production Mode |
-|---------|------------------|-----------------|
-| Requirements | Hardcoded Pitt CS | AI-generated for any school |
-| Prerequisites | Hardcoded Pitt CS | AI-searched |
-| School Support | Pitt only | Any university |
-| AI API Calls | Minimal (preferences only) | Full AI integration |
-| Response Time | Fast | Slower (AI calls) |
-| Rate Limiting | None | Subject to AI API limits |
-| Data Consistency | Always consistent | Dynamic |
+| Feature          | Development Mode                 | Production Mode             |
+| ---------------- | -------------------------------- | --------------------------- |
+| Requirements     | Generic templates for any school | AI-generated for any school |
+| Prerequisites    | Generic templates for any school | AI-searched                 |
+| School Support   | Any university (generic)         | Any university (AI-powered) |
+| AI API Calls     | Minimal (preferences only)       | Full AI integration         |
+| Response Time    | Fast                             | Slower (AI calls)           |
+| Rate Limiting    | None                             | Subject to AI API limits    |
+| Data Consistency | Always consistent                | Dynamic                     |
 
 ## Migration from Legacy System
 
@@ -83,11 +87,13 @@ The old `USE_AI_PREREQUISITES` flag is now deprecated but still supported for ba
 - `USE_AI_PREREQUISITES=true` → `APP_MODE=production`
 
 **Legacy Support:**
+
 - If `USE_AI_PREREQUISITES` is set, it will override `APP_MODE`
 - You'll see deprecation warnings in the logs
 - Use `python scripts/switch_mode.py` to migrate to the new system
 
 **Recommended Migration:**
+
 ```bash
 # Check current mode
 python scripts/switch_mode.py status
