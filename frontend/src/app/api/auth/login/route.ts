@@ -8,9 +8,16 @@ export const GET = async (req: NextRequest) => {
   const auth0ClientId = process.env.AUTH0_CLIENT_ID;
   const auth0BaseUrl = process.env.AUTH0_BASE_URL;
 
-  if (!auth0Domain || !auth0ClientId || !auth0BaseUrl) {
+  // Fallback to detecting the base URL from the request
+  const baseUrl =
+    auth0BaseUrl || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+
+  if (!auth0Domain || !auth0ClientId) {
     return NextResponse.json(
-      { error: "Auth0 configuration missing" },
+      {
+        error: "Auth0 configuration missing",
+        details: { auth0Domain, auth0ClientId, baseUrl },
+      },
       { status: 500 }
     );
   }
@@ -19,10 +26,7 @@ export const GET = async (req: NextRequest) => {
   const loginUrl = new URL(`https://${auth0Domain}/authorize`);
   loginUrl.searchParams.set("response_type", "code");
   loginUrl.searchParams.set("client_id", auth0ClientId);
-  loginUrl.searchParams.set(
-    "redirect_uri",
-    `${auth0BaseUrl}/api/auth/callback`
-  );
+  loginUrl.searchParams.set("redirect_uri", `${baseUrl}/api/auth/callback`);
   loginUrl.searchParams.set("scope", "openid profile email");
   loginUrl.searchParams.set("state", "login");
 

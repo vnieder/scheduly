@@ -8,9 +8,16 @@ export const GET = async (req: NextRequest) => {
   const auth0ClientId = process.env.AUTH0_CLIENT_ID;
   const auth0BaseUrl = process.env.AUTH0_BASE_URL;
 
-  if (!auth0Domain || !auth0ClientId || !auth0BaseUrl) {
+  // Fallback to detecting the base URL from the request
+  const baseUrl =
+    auth0BaseUrl || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+
+  if (!auth0Domain || !auth0ClientId) {
     return NextResponse.json(
-      { error: "Auth0 configuration missing" },
+      {
+        error: "Auth0 configuration missing",
+        details: { auth0Domain, auth0ClientId, baseUrl },
+      },
       { status: 500 }
     );
   }
@@ -18,7 +25,7 @@ export const GET = async (req: NextRequest) => {
   // Redirect to Auth0 logout
   const logoutUrl = new URL(`https://${auth0Domain}/v2/logout`);
   logoutUrl.searchParams.set("client_id", auth0ClientId);
-  logoutUrl.searchParams.set("returnTo", auth0BaseUrl);
+  logoutUrl.searchParams.set("returnTo", baseUrl);
 
   return NextResponse.redirect(logoutUrl.toString());
 };

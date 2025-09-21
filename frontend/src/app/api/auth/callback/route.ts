@@ -10,9 +10,16 @@ export const GET = async (req: NextRequest) => {
   const auth0ClientId = process.env.AUTH0_CLIENT_ID;
   const auth0BaseUrl = process.env.AUTH0_BASE_URL;
 
-  if (!auth0Domain || !auth0ClientId || !auth0BaseUrl) {
+  // Fallback to detecting the base URL from the request
+  const baseUrl =
+    auth0BaseUrl || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+
+  if (!auth0Domain || !auth0ClientId) {
     return NextResponse.json(
-      { error: "Auth0 configuration missing" },
+      {
+        error: "Auth0 configuration missing",
+        details: { auth0Domain, auth0ClientId, baseUrl },
+      },
       { status: 500 }
     );
   }
@@ -40,7 +47,7 @@ export const GET = async (req: NextRequest) => {
         client_id: auth0ClientId,
         client_secret: process.env.AUTH0_CLIENT_SECRET,
         code,
-        redirect_uri: `${auth0BaseUrl}/api/auth/callback`,
+        redirect_uri: `${baseUrl}/api/auth/callback`,
       }),
     });
 
@@ -63,7 +70,7 @@ export const GET = async (req: NextRequest) => {
     const user = await userResponse.json();
 
     // Create response with redirect to home page
-    const response = NextResponse.redirect(`${auth0BaseUrl}/`);
+    const response = NextResponse.redirect(`${baseUrl}/`);
 
     // Set session cookie (you might want to use a more secure session management)
     response.cookies.set("auth0_session", JSON.stringify({ user, tokens }), {
